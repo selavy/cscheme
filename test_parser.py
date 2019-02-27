@@ -102,3 +102,11 @@ def test_parse_number():
     for value in values:
         p = Parser(value)
         assert p.parse() == float(value)
+
+
+def test_parse_plus_expression():
+    p = Parser('(+ 1 2)')
+    assert p.parse() == 3.
+
+    p = Parser('(+ 1 2 3 4 5)')
+    assert p.parse() == 15.

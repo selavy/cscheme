@@ -69,9 +69,9 @@ class Builtin:
 
 class BuiltinPlus(Builtin):
     def __init__(self):
-        super().__init__(self, "<+>")
+        super().__init__("<+>")
 
-    def execute(self, params):
+    def execute(self, env, params):
         result = 0.
         for x in params:
             result += x
@@ -81,6 +81,21 @@ class BuiltinPlus(Builtin):
 class Symbol:
     def __init__(self, value):
         self.value = value
+
+    def execute(self, env):
+        # TODO:
+        raise NotImplementedError()
+
+
+def evaluate(env, x):
+    if isinstance(x, float):
+        return x
+    elif isinstance(x, Symbol):
+        return x.evaluate(env)
+
+
+def evaluate_function(x, env, params):
+    return x.execute(env, params)
 
 
 class Parser:
@@ -106,8 +121,8 @@ class Parser:
 
     def expect(self, ttype):
         if not self.accept(ttype):
-            raise ValueError("Expected {}, received {}".format(
-                ttype, self.tokens))
+            raise ValueError("Expected {}, received {}: '{}'".format(
+                ttype, self._token, self._value))
 
     def parse(self):
         return self.expr()
@@ -127,8 +142,15 @@ class Parser:
 
     def expr(self):
         if self.accept(Token.LPAREN):
-            result = self.expr()
-            self.expect(Token.RPAREN)
+            result = []
+            while not self.accept(Token.RPAREN):
+                if self.accept(Token.EOF):
+                    raise Exception("Unexpected end of input")
+                result.append(self.expr())
+            func = result[0]
+            env = {}  # TODO:
+            params = [evaluate(env, x) for x in result[1:]]
+            result = evaluate_function(func, env, params)
         else:
             result = self.statement()
         return result
