@@ -89,3 +89,16 @@ def test_parser_advance():
     for i in range(10):
         p.advance()
         assert p.cur() == (Token.EOF, None)
+
+
+def test_parse_number():
+    values = [
+        '1',
+        '42',
+        '100000',
+        '1010101',
+        '4123435',
+    ]
+    for value in values:
+        p = Parser(value)
+        assert p.parse() == float(value)

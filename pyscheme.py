@@ -62,26 +62,47 @@ def lexall(s):
     return rval
 
 
-class Parser(object):
+class Builtin:
+    def __init__(self, name):
+        self.name = name
+
+
+class BuiltinPlus(Builtin):
+    def __init__(self):
+        super().__init__(self, "<+>")
+
+    def execute(self, params):
+        result = 0.
+        for x in params:
+            result += x
+        return result
+
+
+class Symbol:
+    def __init__(self, value):
+        self.value = value
+
+
+class Parser:
     def __init__(self, text):
         self._i = 0
         self._token = None
+        self._value = None
         self._text = text
         self.advance()
 
     def accept(self, ttype):
-        if self.cur() == ttype:
+        if self._token == ttype:
             self.advance()
             return True
         else:
             return False
 
     def cur(self):
-        return self._token
+        return (self._token, self._value)
 
     def advance(self):
-        self._i, tok, val = lex(self._text, self._i)
-        self._token = (tok, val)
+        self._i, self._token, self._value = lex(self._text, self._i)
 
     def expect(self, ttype):
         if not self.accept(ttype):
@@ -89,10 +110,25 @@ class Parser(object):
                 ttype, self.tokens))
 
     def parse(self):
-        self.expr()
+        return self.expr()
+
+    def statement(self):
+        value = self._value
+        if self.accept(Token.NUMBER):
+            result = float(value)
+        elif self.accept(Token.PLUS):
+            result = BuiltinPlus()
+        elif self.accept(Token.IDENT):
+            result = Symbol(value)
+        else:
+            raise Exception("Unexpected token: %s of type %s" %
+                            (self._value, self._token))
+        return result
 
     def expr(self):
         if self.accept(Token.LPAREN):
-            self.expr()
+            result = self.expr()
             self.expect(Token.RPAREN)
-        self.statement()
+        else:
+            result = self.statement()
+        return result
