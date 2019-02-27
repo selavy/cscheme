@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from enum import Enum, auto
+import re
 
 
 class Token(Enum):
@@ -27,12 +28,13 @@ def lex_(s, i):
     elif c == '+':
         return i, Token.PLUS, c
     elif c.isdigit():
+        # TODO: handle floating point
         while i < n and s[i].isdigit():
             c += s[i]
             i += 1
         return i, Token.NUMBER, c
     else:
-        while i < n and not s[i].isspace():
+        while i < n and re.match('[a-zA-Z_]', s[i]):
             c += s[i]
             i += 1
         return i, Token.IDENT, c

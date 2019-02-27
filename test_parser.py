@@ -36,3 +36,35 @@ def test_lex_nested_expression():
         (Token.RPAREN, ')'),
         (Token.EOF,    None),
         ]
+
+
+def test_lex_lambda_expression():
+    ts = lex('''
+        (define foo
+            (lambda (x y)
+                (+ x y)
+            )
+        )
+        ''')
+    assert ts == [
+        (Token.LPAREN, '('),
+        (Token.IDENT,  'define'),
+        (Token.IDENT,  'foo'),
+        (Token.LPAREN, '('),
+        (Token.IDENT,  'lambda'),
+        (Token.LPAREN, '('),
+        (Token.IDENT,  'x'),
+        (Token.IDENT,  'y'),
+        (Token.RPAREN, ')'),
+        (Token.LPAREN, '('),
+        (Token.PLUS,   '+'),
+        (Token.IDENT,  'x'),
+        (Token.IDENT,  'y'),
+        (Token.RPAREN, ')'),
+        (Token.RPAREN, ')'),
+        (Token.RPAREN, ')'),
+        (Token.EOF,    None),
+    ]
+
+    ts2 = lex('(define foo (lambda (x y) (+ x y)))')
+    assert ts == ts2
