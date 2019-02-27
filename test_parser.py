@@ -51,7 +51,7 @@ def test_lex_lambda_expression():
         (Token.DEFINE, 'define'),
         (Token.IDENT,  'foo'),
         (Token.LPAREN, '('),
-        (Token.IDENT,  'lambda'),
+        (Token.LAMBDA, 'lambda'),
         (Token.LPAREN, '('),
         (Token.IDENT,  'x'),
         (Token.IDENT,  'y'),

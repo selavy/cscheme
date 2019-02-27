@@ -11,6 +11,7 @@ class Token(Enum):
     NUMBER = auto()
     IDENT = auto()
     DEFINE = auto()
+    LAMBDA = auto()
     EOF = auto()
 
 
@@ -43,6 +44,8 @@ def lex(s, i):
             i += 1
         if c == 'define':
             kind = Token.DEFINE
+        elif c == 'lambda':
+            kind = Token.LAMBDA
         else:
             kind = Token.IDENT
         return i, kind, c
