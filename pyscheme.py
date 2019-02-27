@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 from enum import Enum, auto
 
 
@@ -50,32 +49,35 @@ def lex(s):
     return rval
 
 
-if __name__ == '__main__':
-    ts = lex("+")
-    assert ts == [(Token.PLUS, '+'), (Token.EOF, None)], f"{ts}"
+class Parser(object):
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.i = 0
 
-    ts = lex('(+ 1 2)')
-    assert ts == [(Token.LPAREN, '('),
-                  (Token.PLUS  , '+'),
-                  (Token.NUMBER, '1'),
-                  (Token.NUMBER, '2'),
-                  (Token.RPAREN, ')'),
-                  (Token.EOF   , None),], f"{ts}"
+    def accept(self, ttype):
+        if self.cur() == ttype:
+            self.advance()
+            return True
+        else:
+            return False
 
-    ts = lex('(+ (+ 1 2) (+ 3 4))')
-    assert ts == [
-        (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
-        (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
-        (Token.NUMBER, '1'),
-        (Token.NUMBER, '2'),
-        (Token.RPAREN, ')'),
-        (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
-        (Token.NUMBER, '3'),
-        (Token.NUMBER, '4'),
-        (Token.RPAREN, ')'),
-        (Token.RPAREN, ')'),
-        (Token.EOF,    None),
-        ], f"{ts}"
+    def cur(self):
+        return self.tokens[self.i]
+
+    def advance(self):
+        if self.i < len(self.tokens) - 1:
+            self.i += 1
+
+    def expect(self, ttype):
+        if not self.accept(ttype):
+            raise ValueError("Expected {}, received {}".format(
+                ttype, self.tokens))
+
+    def parse(self):
+        self.expr()
+
+    def expr(self):
+        if self.accept(Token.LPAREN):
+            self.expr()
+            self.expect(Token.RPAREN)
+        self.statement()
