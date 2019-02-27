@@ -48,7 +48,7 @@ def test_lex_lambda_expression():
         ''')
     assert ts == [
         (Token.LPAREN, '('),
-        (Token.IDENT,  'define'),
+        (Token.DEFINE, 'define'),
         (Token.IDENT,  'foo'),
         (Token.LPAREN, '('),
         (Token.IDENT,  'lambda'),

@@ -10,6 +10,7 @@ class Token(Enum):
     PLUS = auto()
     NUMBER = auto()
     IDENT = auto()
+    DEFINE = auto()
     EOF = auto()
 
 
@@ -40,7 +41,11 @@ def lex(s, i):
         while i < n and IDENTPAT.match(s[i]):
             c += s[i]
             i += 1
-        return i, Token.IDENT, c
+        if c == 'define':
+            kind = Token.DEFINE
+        else:
+            kind = Token.IDENT
+        return i, kind, c
 
 
 def lexall(s):
