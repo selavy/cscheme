@@ -52,9 +52,11 @@ def lexall(s):
 
 
 class Parser(object):
-    def __init__(self, tokens):
-        self.tokens = tokens
-        self.i = 0
+    def __init__(self, text):
+        self._i = 0
+        self._token = None
+        self._text = text
+        self.advance()
 
     def accept(self, ttype):
         if self.cur() == ttype:
@@ -64,11 +66,11 @@ class Parser(object):
             return False
 
     def cur(self):
-        return self.tokens[self.i]
+        return self._token
 
     def advance(self):
-        if self.i < len(self.tokens) - 1:
-            self.i += 1
+        self._i, tok, val = lex(self._text, self._i)
+        self._token = (tok, val)
 
     def expect(self, ttype):
         if not self.accept(ttype):

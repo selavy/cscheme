@@ -1,4 +1,4 @@
-from pyscheme import Token, lexall
+from pyscheme import Token, lexall, Parser
 
 
 def test_lex_single_token():
@@ -68,3 +68,24 @@ def test_lex_lambda_expression():
 
     ts2 = lexall('(define foo (lambda (x y) (+ x y)))')
     assert ts == ts2
+
+
+def test_parser_advance():
+    text = '(+ x y)'
+    p = Parser(text)
+    assert p.cur() == (Token.LPAREN, '(')
+    p.advance()
+    assert p.cur() == (Token.PLUS, '+')
+    p.advance()
+    assert p.cur() == (Token.IDENT, 'x')
+    p.advance()
+    assert p.cur() == (Token.IDENT, 'y')
+    p.advance()
+    assert p.cur() == (Token.RPAREN, ')')
+    p.advance()
+    assert p.cur() == (Token.EOF, None)
+
+    # repeat advance while at EOF should be safe
+    for i in range(10):
+        p.advance()
+        assert p.cur() == (Token.EOF, None)
