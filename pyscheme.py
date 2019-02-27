@@ -13,6 +13,9 @@ class Token(Enum):
     EOF = auto()
 
 
+IDENTPAT = re.compile('[a-zA-Z_]')
+
+
 def lex(s, i):
     n = len(s)
     while i < n and s[i].isspace():
@@ -34,7 +37,7 @@ def lex(s, i):
             i += 1
         return i, Token.NUMBER, c
     else:
-        while i < n and re.match('[a-zA-Z_]', s[i]):
+        while i < n and IDENTPAT.match(s[i]):
             c += s[i]
             i += 1
         return i, Token.IDENT, c
