@@ -110,3 +110,11 @@ def test_parse_plus_expression():
 
     p = Parser('(+ 1 2 3 4 5)')
     assert p.parse() == 15.
+
+
+def test_eval_nested_plus_expr():
+    p = Parser('(+ (+ 1 2) (+ 3 4))')
+    assert p.parse() == 10.
+
+    p = Parser('(+ (+ 1 1) (+ 1 1) (+ 1 1))')
+    assert p.parse() == 6.
