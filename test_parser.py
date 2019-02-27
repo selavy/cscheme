@@ -1,13 +1,13 @@
-from pyscheme import Token, lex
+from pyscheme import Token, lexall
 
 
 def test_lex_single_token():
-    ts = lex("+")
+    ts = lexall("+")
     assert ts == [(Token.PLUS, '+'), (Token.EOF, None)]
 
 
 def test_lex_one_level_expression():
-    ts = lex('(+ 1 2)')
+    ts = lexall('(+ 1 2)')
     assert ts == [
         (Token.LPAREN, '('),
         (Token.PLUS,   '+'),
@@ -19,7 +19,7 @@ def test_lex_one_level_expression():
 
 
 def test_lex_nested_expression():
-    ts = lex('(+ (+ 1 2) (+ 3 4))')
+    ts = lexall('(+ (+ 1 2) (+ 3 4))')
     assert ts == [
         (Token.LPAREN, '('),
         (Token.PLUS,   '+'),
@@ -39,7 +39,7 @@ def test_lex_nested_expression():
 
 
 def test_lex_lambda_expression():
-    ts = lex('''
+    ts = lexall('''
         (define foo
             (lambda (x y)
                 (+ x y)
@@ -66,5 +66,5 @@ def test_lex_lambda_expression():
         (Token.EOF,    None),
     ]
 
-    ts2 = lex('(define foo (lambda (x y) (+ x y)))')
+    ts2 = lexall('(define foo (lambda (x y) (+ x y)))')
     assert ts == ts2

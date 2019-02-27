@@ -13,7 +13,7 @@ class Token(Enum):
     EOF = auto()
 
 
-def lex_(s, i):
+def lex(s, i):
     n = len(s)
     while i < n and s[i].isspace():
         i += 1
@@ -40,13 +40,13 @@ def lex_(s, i):
         return i, Token.IDENT, c
 
 
-def lex(s):
+def lexall(s):
     i = 0
     t = None
     v = None
     rval = []
     while t != Token.EOF:
-        i, t, v = lex_(s, i)
+        i, t, v = lex(s, i)
         rval.append((t, v))
     return rval
 
