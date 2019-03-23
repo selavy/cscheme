@@ -1,4 +1,4 @@
-from pyscheme import Token, lexall, Parser
+from pyscheme import Token, lexall, Interpreter
 
 
 def test_lex_single_token():
@@ -72,7 +72,7 @@ def test_lex_lambda_expression():
 
 def test_parser_advance():
     text = '(+ x y)'
-    p = Parser(text)
+    p = Interpreter(text)
     assert p.cur() == (Token.LPAREN, '(')
     p.advance()
     assert p.cur() == (Token.PLUS, '+')
@@ -100,21 +100,29 @@ def test_parse_number():
         '4123435',
     ]
     for value in values:
-        p = Parser(value)
-        assert p.parse() == float(value)
+        p = Interpreter(value)
+        assert p.run() == float(value)
 
 
 def test_parse_plus_expression():
-    p = Parser('(+ 1 2)')
-    assert p.parse() == 3.
+    p = Interpreter('(+ 1 2)')
+    assert p.run() == 3.
 
-    p = Parser('(+ 1 2 3 4 5)')
-    assert p.parse() == 15.
+    p = Interpreter('(+ 1 2 3 4 5)')
+    assert p.run() == 15.
 
 
 def test_eval_nested_plus_expr():
-    p = Parser('(+ (+ 1 2) (+ 3 4))')
-    assert p.parse() == 10.
+    p = Interpreter('(+ (+ 1 2) (+ 3 4))')
+    assert p.run() == 10.
 
-    p = Parser('(+ (+ 1 1) (+ 1 1) (+ 1 1))')
-    assert p.parse() == 6.
+    p = Interpreter('(+ (+ 1 1) (+ 1 1) (+ 1 1))')
+    assert p.run() == 6.
+
+
+# def test_eval_lambda():
+#     p = Interpreter("((lambda (x) 5) 1)")
+#     assert p.run() == 5
+# 
+#     # p = Interpreter("((lambda (x) (+ x 1)) 5)")
+#     # assert p.run() == 6

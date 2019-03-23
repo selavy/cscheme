@@ -78,27 +78,69 @@ class BuiltinPlus(Builtin):
         return result
 
 
+class Lambda:
+    def __init__(self, params, body):
+        self.params = params
+        self.body = body
+        self.name = '<lambda>'
+        # TEMP TEMP
+        print(f"Lambda(name={self.name}, params={self.params}, body={self.body})")
+
+    def execute(self, env, params):
+        if len(params) != len(self.params):
+            raise Exception(f"Lambda expected {len(self.params)} arguments, but received {len(params)}.")
+        inner = dict(zip(self.params, params))
+        inner['__parent'] = env
+        print("Lambda.execute()")
+        print(env)
+        return evaluate(inner, self.body)
+
+    def __repr__(self):
+        return "Lambda"
+
+    def __str__(self):
+        return self.__repr__()
+
+
 class Symbol:
     def __init__(self, value):
         self.value = value
 
     def execute(self, env):
-        # TODO:
-        raise NotImplementedError()
+        while env is not None:
+            try:
+                return env[self.value]
+            except KeyError:
+                env = env.get('__parent', None)
+        raise Exception(f"Unbound symbol '{self.value}'")
+
+    def __repr__(self):
+        return f"Symbol({self.value})"
+
+    def __str__(self):
+        return self.__repr__()
 
 
 def evaluate(env, x):
-    if isinstance(x, float):
+    # TEMP TEMP
+    print(f"evaluate({env}, {x})")
+    if isinstance(x, Symbol):
+        return x.execute(env)
+    elif isinstance(x, Lambda):
         return x
-    elif isinstance(x, Symbol):
-        return x.evaluate(env)
+    elif isinstance(x, list):
+        fn = evaluate(env, x[0])
+        args = [evaluate(env, v) for v in x[1:]]
+        return fn.execute(env, args)
+    else:
+        return x
 
 
-def evaluate_function(x, env, params):
+def eval_sexpr(x, env, params):
     return x.execute(env, params)
 
 
-class Parser:
+class Interpreter:
     def __init__(self, text):
         self._i = 0
         self._token = None
@@ -106,10 +148,12 @@ class Parser:
         self._text = text
         self.advance()
 
-    def accept(self, ttype):
+    def accept(self, ttype, allow_eof=True):
         if self._token == ttype:
             self.advance()
             return True
+        elif not allow_eof and self._token == Token.EOF:
+            raise Exception("Unexpected end of input")
         else:
             return False
 
@@ -124,8 +168,17 @@ class Parser:
             raise ValueError("Expected {}, received {}: '{}'".format(
                 ttype, self._token, self._value))
 
-    def parse(self):
-        return self.expr()
+    def run(self):
+        env = {}
+        return evaluate(env, self.sexpr())
+
+    def readparams(self):
+        rv = []
+        self.expect(Token.LPAREN)
+        while not self.accept(Token.RPAREN, allow_eof=False):
+            rv.append(Symbol(self._value))
+            self.expect(Token.IDENT)
+        return rv
 
     def statement(self):
         value = self._value
@@ -133,6 +186,10 @@ class Parser:
             result = float(value)
         elif self.accept(Token.PLUS):
             result = BuiltinPlus()
+        elif self.accept(Token.LAMBDA):
+            params = self.readparams()
+            body = self.sexpr()
+            result = Lambda(params, body)
         elif self.accept(Token.IDENT):
             result = Symbol(value)
         else:
@@ -140,17 +197,11 @@ class Parser:
                             (self._value, self._token))
         return result
 
-    def expr(self):
+    def sexpr(self):
         if self.accept(Token.LPAREN):
             result = []
-            while not self.accept(Token.RPAREN):
-                if self.accept(Token.EOF):
-                    raise Exception("Unexpected end of input")
-                result.append(self.expr())
-            func = result[0]
-            env = {}  # TODO:
-            params = [evaluate(env, x) for x in result[1:]]
-            result = evaluate_function(func, env, params)
+            while not self.accept(Token.RPAREN, allow_eof=False):
+                result.append(self.sexpr())
         else:
             result = self.statement()
         return result
