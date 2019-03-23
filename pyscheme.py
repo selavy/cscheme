@@ -125,15 +125,18 @@ def evaluate(env, x):
     # TEMP TEMP
     print(f"evaluate({env}, {x})")
     if isinstance(x, Symbol):
-        return x.execute(env)
+        result = x.execute(env)
+    elif isinstance(x, Builtin):
+        result = x
     elif isinstance(x, Lambda):
-        return x
+        result = x
     elif isinstance(x, list):
-        fn = evaluate(env, x[0])
-        args = [evaluate(env, v) for v in x[1:]]
-        return fn.execute(env, args)
+        xs = [evaluate(env, v) for v in x]
+        result = xs[0].execute(env, xs[1:])
     else:
-        return x
+        result = x
+    print(f">>> returns = {result}")
+    return result
 
 
 def eval_sexpr(x, env, params):
@@ -163,8 +166,7 @@ class Interpreter:
 
     def _expect(self, ttype):
         if not self._accept(ttype):
-            raise ValueError("Expected {}, received {}: '{}'".format(
-                ttype, self._token, self._value))
+            raise ValueError(f"Expected {ttype}, received {self._token}: '{self._value}'")
 
     def run(self):
         env = {}
