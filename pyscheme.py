@@ -148,7 +148,11 @@ class Interpreter:
         self._text = text
         self.advance()
 
-    def accept(self, ttype, allow_eof=True):
+    def advance(self):
+        self._i, self._token, self._value = lex(self._text, self._i)
+
+    # TODO: default allow_eof to False?
+    def _accept(self, ttype, allow_eof=True):
         if self._token == ttype:
             self.advance()
             return True
@@ -157,14 +161,8 @@ class Interpreter:
         else:
             return False
 
-    def cur(self):
-        return (self._token, self._value)
-
-    def advance(self):
-        self._i, self._token, self._value = lex(self._text, self._i)
-
-    def expect(self, ttype):
-        if not self.accept(ttype):
+    def _expect(self, ttype):
+        if not self._accept(ttype):
             raise ValueError("Expected {}, received {}: '{}'".format(
                 ttype, self._token, self._value))
 
@@ -174,27 +172,27 @@ class Interpreter:
 
     def readparams(self):
         rv = []
-        self.expect(Token.LPAREN)
-        while not self.accept(Token.RPAREN, allow_eof=False):
+        self._expect(Token.LPAREN)
+        while not self._accept(Token.RPAREN, allow_eof=False):
             rv.append(Symbol(self._value))
-            self.expect(Token.IDENT)
+            self._expect(Token.IDENT)
         return rv
 
     def sexpr(self):
         value = self._value
-        if self.accept(Token.LPAREN):
+        if self._accept(Token.LPAREN):
             result = []
-            while not self.accept(Token.RPAREN, allow_eof=False):
+            while not self._accept(Token.RPAREN, allow_eof=False):
                 result.append(self.sexpr())
-        elif self.accept(Token.NUMBER):
+        elif self._accept(Token.NUMBER):
             result = float(value)
-        elif self.accept(Token.PLUS):
+        elif self._accept(Token.PLUS):
             result = BuiltinPlus()
-        elif self.accept(Token.LAMBDA):
+        elif self._accept(Token.LAMBDA):
             params = self.readparams()
             body = self.sexpr()
             result = Lambda(params, body)
-        elif self.accept(Token.IDENT):
+        elif self._accept(Token.IDENT):
             result = Symbol(value)
         else:
             raise Exception("Unexpected token: %s of type %s" %

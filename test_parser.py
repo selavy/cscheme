@@ -73,22 +73,26 @@ def test_lex_lambda_expression():
 def test_parser_advance():
     text = '(+ x y)'
     p = Interpreter(text)
-    assert p.cur() == (Token.LPAREN, '(')
+
+    def cur():
+        return (p._token, p._value)
+
+    assert cur() == (Token.LPAREN, '(')
     p.advance()
-    assert p.cur() == (Token.PLUS, '+')
+    assert cur() == (Token.PLUS, '+')
     p.advance()
-    assert p.cur() == (Token.IDENT, 'x')
+    assert cur() == (Token.IDENT, 'x')
     p.advance()
-    assert p.cur() == (Token.IDENT, 'y')
+    assert cur() == (Token.IDENT, 'y')
     p.advance()
-    assert p.cur() == (Token.RPAREN, ')')
+    assert cur() == (Token.RPAREN, ')')
     p.advance()
-    assert p.cur() == (Token.EOF, None)
+    assert cur() == (Token.EOF, None)
 
     # repeat advance while at EOF should be safe
     for i in range(10):
         p.advance()
-        assert p.cur() == (Token.EOF, None)
+        assert cur() == (Token.EOF, None)
 
 
 def test_parse_number():
