@@ -180,9 +180,13 @@ class Interpreter:
             self.expect(Token.IDENT)
         return rv
 
-    def statement(self):
+    def sexpr(self):
         value = self._value
-        if self.accept(Token.NUMBER):
+        if self.accept(Token.LPAREN):
+            result = []
+            while not self.accept(Token.RPAREN, allow_eof=False):
+                result.append(self.sexpr())
+        elif self.accept(Token.NUMBER):
             result = float(value)
         elif self.accept(Token.PLUS):
             result = BuiltinPlus()
@@ -195,13 +199,4 @@ class Interpreter:
         else:
             raise Exception("Unexpected token: %s of type %s" %
                             (self._value, self._token))
-        return result
-
-    def sexpr(self):
-        if self.accept(Token.LPAREN):
-            result = []
-            while not self.accept(Token.RPAREN, allow_eof=False):
-                result.append(self.sexpr())
-        else:
-            result = self.statement()
         return result
