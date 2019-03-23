@@ -78,20 +78,20 @@ def test_parser_advance():
         return (p._token, p._value)
 
     assert cur() == (Token.LPAREN, '(')
-    p.advance()
+    p._advance()
     assert cur() == (Token.PLUS, '+')
-    p.advance()
+    p._advance()
     assert cur() == (Token.IDENT, 'x')
-    p.advance()
+    p._advance()
     assert cur() == (Token.IDENT, 'y')
-    p.advance()
+    p._advance()
     assert cur() == (Token.RPAREN, ')')
-    p.advance()
+    p._advance()
     assert cur() == (Token.EOF, None)
 
     # repeat advance while at EOF should be safe
     for i in range(10):
-        p.advance()
+        p._advance()
         assert cur() == (Token.EOF, None)
 
 

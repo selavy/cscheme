@@ -146,15 +146,15 @@ class Interpreter:
         self._token = None
         self._value = None
         self._text = text
-        self.advance()
+        self._advance()
 
-    def advance(self):
+    def _advance(self):
         self._i, self._token, self._value = lex(self._text, self._i)
 
     # TODO: default allow_eof to False?
     def _accept(self, ttype, allow_eof=True):
         if self._token == ttype:
-            self.advance()
+            self._advance()
             return True
         elif not allow_eof and self._token == Token.EOF:
             raise Exception("Unexpected end of input")
