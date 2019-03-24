@@ -102,38 +102,21 @@ class Lambda:
         return self.__repr__()
 
 
-class Symbol:
-    def __init__(self, value):
-        self.value = value
-
-    def execute(self, env):
-        while env is not None:
-            try:
-                return env[self.value]
-            except KeyError:
-                env = env.get('__parent', None)
-        raise Exception(f"Unbound symbol '{self.value}'")
-
-    def __repr__(self):
-        return f"Symbol({self.value})"
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return self.value == other
-        return self.value == other.value
-
-    def __hash__(self):
-        return hash(self.value)
+def eval_symbol(env, x):
+    while env is not None:
+        try:
+            return env[x]
+            break
+        except KeyError:
+            env = env.get('__parent', None)
+    raise Exception(f"Unbound symbol '{self.value}'")
 
 
 def evaluate(env, x):
     # TEMP TEMP
     print(f"evaluate({env}, {x})")
-    if isinstance(x, Symbol):
-        result = x.execute(env)
+    if isinstance(x, str):
+        result = eval_symbol(env, x)
     elif isinstance(x, Builtin):
         result = x
     elif isinstance(x, Lambda):
@@ -184,7 +167,8 @@ class Interpreter:
         rv = []
         self._expect(Token.LPAREN)
         while not self._accept(Token.RPAREN, allow_eof=False):
-            rv.append(Symbol(self._value))
+            symbol = str(self._value)
+            rv.append(symbol)
             self._expect(Token.IDENT)
         return rv
 
@@ -206,7 +190,7 @@ class Interpreter:
             body = self.sexpr()
             result = Lambda(params, body)
         elif self._accept(Token.IDENT):
-            result = Symbol(value)
+            result = str(value)
         else:
             raise Exception("Unexpected token: %s of type %s" %
                             (self._value, self._token))
