@@ -124,9 +124,12 @@ def test_eval_nested_plus_expr():
     assert p.run() == 6.
 
 
-# def test_eval_lambda():
-#     p = Interpreter("((lambda (x) 5) 1)")
-#     assert p.run() == 5
-# 
-#     # p = Interpreter("((lambda (x) (+ x 1)) 5)")
-#     # assert p.run() == 6
+def test_eval_lambda():
+    p = Interpreter("((lambda (x) 5) 1)")
+    assert p.run() == 5
+
+    p = Interpreter("((lambda (x) (+ x 1)) 5)")
+    assert p.run() == 6
+
+    p = Interpreter("((lambda (x y) (+ x y)) 3 4)")
+    assert p.run() == 7

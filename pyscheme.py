@@ -120,6 +120,14 @@ class Symbol:
     def __str__(self):
         return self.__repr__()
 
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.value == other
+        return self.value == other.value
+
+    def __hash__(self):
+        return hash(self.value)
+
 
 def evaluate(env, x):
     # TEMP TEMP
@@ -186,6 +194,9 @@ class Interpreter:
             result = []
             while not self._accept(Token.RPAREN, allow_eof=False):
                 result.append(self.sexpr())
+            # XXX: not sure this is correct in all cases -- unwrap lambdas
+            if len(result) == 1 and isinstance(result[0], Lambda):
+                result = result[0]
         elif self._accept(Token.NUMBER):
             result = float(value)
         elif self._accept(Token.PLUS):
