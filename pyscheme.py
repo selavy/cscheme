@@ -51,17 +51,6 @@ def lex(s, i):
         return i, kind, c
 
 
-def lexall(s):
-    i = 0
-    t = None
-    v = None
-    rval = []
-    while t != Token.EOF:
-        i, t, v = lex(s, i)
-        rval.append((t, v))
-    return rval
-
-
 class Builtin:
     def __init__(self, name):
         self.name = name

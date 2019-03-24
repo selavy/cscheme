@@ -1,4 +1,15 @@
-from pyscheme import Token, lexall, Interpreter
+from pyscheme import lex, Token, Interpreter
+
+
+def lexall(s):
+    i = 0
+    t = None
+    v = None
+    rval = []
+    while t != Token.EOF:
+        i, t, v = lex(s, i)
+        rval.append((t, v))
+    return rval
 
 
 def test_lex_single_token():
