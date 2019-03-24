@@ -7,15 +7,15 @@ import re
 class Token(Enum):
     LPAREN = auto()
     RPAREN = auto()
-    PLUS = auto()
     NUMBER = auto()
     IDENT = auto()
     DEFINE = auto()
     LAMBDA = auto()
+    IF = auto()
     EOF = auto()
 
 
-IDENTPAT = re.compile('[a-zA-Z_]')
+IDENTPAT = re.compile('[a-zA-Z_+\\-*]')
 
 
 def lex(s, i):
@@ -30,8 +30,6 @@ def lex(s, i):
         return i, Token.LPAREN, c
     elif c == ')':
         return i, Token.RPAREN, c
-    elif c == '+':
-        return i, Token.PLUS, c
     elif c.isdigit():
         # TODO: handle floating point
         while i < n and s[i].isdigit():
@@ -46,6 +44,8 @@ def lex(s, i):
             kind = Token.DEFINE
         elif c == 'lambda':
             kind = Token.LAMBDA
+        elif c == 'if':
+            kind = Token.IF
         else:
             kind = Token.IDENT
         return i, kind, c
@@ -60,14 +60,50 @@ class BuiltinPlus(Builtin):
     def __init__(self):
         super().__init__("<+>")
 
-    def execute(self, env, params):
+    def execute(self, args):
         result = 0.
-        for x in params:
+        for x in args:
             result += x
         return result
 
     def __repr__(self):
         return 'Plus'
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class BuiltinSub(Builtin):
+    def __init__(self):
+        super().__init__("<->")
+
+    def execute(self, args):
+        if not args:
+            result = 0.
+        elif len(args) == 1:
+            result = -1 * float(args[0])
+        else:
+            result = float(args[0])
+            for x in args[1:]:
+                result -= float(x)
+        return result
+
+
+class BuiltinEq(Builtin):
+    def __init__(self):
+        super().__init__("=")
+
+    def execute(self, params):
+        assert len(params) >= 1, "arity mismatch; expected at least 1 argument"
+        result = True
+        value = params[0]
+        # TODO: coerce to correct type?
+        for x in params[1:]:
+            result &= x == value
+        return value
+
+    def __repr__(self):
+        return '='
 
     def __str__(self):
         return self.__repr__()
@@ -172,7 +208,11 @@ class Interpreter:
             raise ValueError(f"Expected {ttype}, received {self._token}: '{self._value}'")
 
     def run(self):
-        env = {}
+        env = {
+            '+': BuiltinPlus,
+            '-': BuiltinSub,
+            '=': BuiltinEq,
+        }
         while self._token != Token.EOF:
             result = evaluate(env, self.sexpr(env))
         return result
@@ -197,8 +237,8 @@ class Interpreter:
                 result = result[0]
         elif self._accept(Token.NUMBER):
             result = float(value)
-        elif self._accept(Token.PLUS):
-            result = BuiltinPlus()
+        # elif self._accept(Token.PLUS):
+        #     result = BuiltinPlus()
         elif self._accept(Token.LAMBDA):
             params = self.readparams()
             body = self.sexpr(env)

@@ -14,14 +14,14 @@ def lexall(s):
 
 def test_lex_single_token():
     ts = lexall("+")
-    assert ts == [(Token.PLUS, '+'), (Token.EOF, None)]
+    assert ts == [(Token.IDENT, '+'), (Token.EOF, None)]
 
 
 def test_lex_one_level_expression():
     ts = lexall('(+ 1 2)')
     assert ts == [
         (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
+        (Token.IDENT,  '+'),
         (Token.NUMBER, '1'),
         (Token.NUMBER, '2'),
         (Token.RPAREN, ')'),
@@ -33,14 +33,14 @@ def test_lex_nested_expression():
     ts = lexall('(+ (+ 1 2) (+ 3 4))')
     assert ts == [
         (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
+        (Token.IDENT,  '+'),
         (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
+        (Token.IDENT,  '+'),
         (Token.NUMBER, '1'),
         (Token.NUMBER, '2'),
         (Token.RPAREN, ')'),
         (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
+        (Token.IDENT,  '+'),
         (Token.NUMBER, '3'),
         (Token.NUMBER, '4'),
         (Token.RPAREN, ')'),
@@ -68,7 +68,7 @@ def test_lex_lambda_expression():
         (Token.IDENT,  'y'),
         (Token.RPAREN, ')'),
         (Token.LPAREN, '('),
-        (Token.PLUS,   '+'),
+        (Token.IDENT,  '+'),
         (Token.IDENT,  'x'),
         (Token.IDENT,  'y'),
         (Token.RPAREN, ')'),
@@ -90,7 +90,7 @@ def test_parser_advance():
 
     assert cur() == (Token.LPAREN, '(')
     p._advance()
-    assert cur() == (Token.PLUS, '+')
+    assert cur() == (Token.IDENT, '+')
     p._advance()
     assert cur() == (Token.IDENT, 'x')
     p._advance()
@@ -126,6 +126,14 @@ def test_parse_plus_expression():
     p = Interpreter('(+ 1 2 3 4 5)')
     assert p.run() == 15.
 
+    p = Interpreter('(- 1)')
+    assert p.run() == -1.
+
+    p = Interpreter('(+)')
+    assert p.run() == 0.
+
+    p = Interpreter('(-)')
+    assert p.run() == 0.
 
 def test_eval_nested_plus_expr():
     p = Interpreter('(+ (+ 1 2) (+ 3 4))')
@@ -170,3 +178,7 @@ def test_eval_define():
 (addone myadd 2)
 """)
     assert p.run() == 3
+
+
+# def test_eval_conditional():
+#     p = Interpreter("()")
