@@ -141,6 +141,9 @@ def test_parse_plus_expression():
     p = Interpreter('(- 5 1 1)')
     assert p.run() == 3.
 
+    p = Interpreter('5')
+    assert p.run() == 5
+
 
 def test_eval_nested_plus_expr():
     p = Interpreter('(+ (+ 1 2) (+ 3 4))')
@@ -148,6 +151,15 @@ def test_eval_nested_plus_expr():
 
     p = Interpreter('(+ (+ 1 1) (+ 1 1) (+ 1 1))')
     assert p.run() == 6.
+
+    p = Interpreter('(= 1 1)')
+    assert p.run() == True
+
+    p = Interpreter('(= 1 1 1 1 1)')
+    assert p.run() == True
+
+    p = Interpreter('(= 1 2)')
+    assert p.run() == False
 
 
 def test_eval_lambda():

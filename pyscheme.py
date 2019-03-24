@@ -99,8 +99,8 @@ class BuiltinEq(Builtin):
         value = params[0]
         # TODO: coerce to correct type?
         for x in params[1:]:
-            result &= x == value
-        return value
+            result &= (x == value)
+        return result
 
     def __repr__(self):
         return '='
@@ -165,6 +165,10 @@ def evaluate(env, x):
     print(f"evaluate({env}, {x})")
     if isinstance(x, str):
         result = eval_symbol(env, x)
+    elif isinstance(x, float):
+        result = x
+    # elif isinstance(x, bool):
+    #     result = x
     elif isinstance(x, Builtin):
         result = x
     elif isinstance(x, Lambda):
