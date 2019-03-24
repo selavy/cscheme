@@ -133,3 +133,6 @@ def test_eval_lambda():
 
     p = Interpreter("((lambda (x y) (+ x y)) 3 4)")
     assert p.run() == 7
+
+    p = Interpreter("((lambda (x y) (+ x y)) ((lambda (x) 3) 1) ((lambda (x) 4) 1))")
+    assert p.run() == 7
