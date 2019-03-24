@@ -55,6 +55,12 @@ class Builtin:
     def __init__(self, name):
         self.name = name
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
 
 class BuiltinPlus(Builtin):
     def __init__(self):
@@ -102,11 +108,14 @@ class BuiltinEq(Builtin):
             result &= (x == value)
         return result
 
-    def __repr__(self):
-        return '='
 
-    def __str__(self):
-        return self.__repr__()
+class BuiltinNot(Builtin):
+    def __init__(self):
+        super().__init__("not")
+
+    def execute(self, params):
+        assert len(params) == 1, "arity mismatch; expected 1 argument"
+        return not bool(params[0])
 
 
 class Lambda:
@@ -215,6 +224,7 @@ class Interpreter:
             '+': BuiltinPlus,
             '-': BuiltinSub,
             '=': BuiltinEq,
+            'not': BuiltinNot,
         }
         while self._token != Token.EOF:
             result = evaluate(env, self.sexpr(env))

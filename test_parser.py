@@ -161,6 +161,9 @@ def test_eval_nested_plus_expr():
     p = Interpreter('(= 1 2)')
     assert p.run() == False
 
+    p = Interpreter('(not (= 1 2))')
+    assert p.run() == True
+
 
 def test_eval_lambda():
     p = Interpreter("((lambda (x) 5) 1)")
