@@ -150,7 +150,9 @@ class Interpreter:
 
     def run(self):
         env = {}
-        return evaluate(env, self.sexpr())
+        while self._token != Token.EOF:
+            result = evaluate(env, self.sexpr())
+        return result
 
     def readparams(self):
         rv = []
