@@ -193,12 +193,11 @@ class Interpreter:
     def _advance(self):
         self._i, self._token, self._value = lex(self._text, self._i)
 
-    # TODO: default allow_eof to False?
-    def _accept(self, ttype, allow_eof=True):
+    def _accept(self, ttype):
         if self._token == ttype:
             self._advance()
             return True
-        elif not allow_eof and self._token == Token.EOF:
+        elif self._token == Token.EOF:
             raise Exception("Unexpected end of input")
         else:
             return False
@@ -220,7 +219,7 @@ class Interpreter:
     def readparams(self):
         rv = []
         self._expect(Token.LPAREN)
-        while not self._accept(Token.RPAREN, allow_eof=False):
+        while not self._accept(Token.RPAREN):
             symbol = str(self._value)
             rv.append(symbol)
             self._expect(Token.IDENT)
@@ -230,15 +229,13 @@ class Interpreter:
         value = self._value
         if self._accept(Token.LPAREN):
             result = []
-            while not self._accept(Token.RPAREN, allow_eof=False):
+            while not self._accept(Token.RPAREN):
                 result.append(self.sexpr(env))
             # XXX: not sure this is correct in all cases -- unwrap lambdas
             if len(result) == 1 and isinstance(result[0], Lambda):
                 result = result[0]
         elif self._accept(Token.NUMBER):
             result = float(value)
-        # elif self._accept(Token.PLUS):
-        #     result = BuiltinPlus()
         elif self._accept(Token.LAMBDA):
             params = self.readparams()
             body = self.sexpr(env)

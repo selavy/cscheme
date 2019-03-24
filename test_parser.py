@@ -135,6 +135,13 @@ def test_parse_plus_expression():
     p = Interpreter('(-)')
     assert p.run() == 0.
 
+    p = Interpreter('(- 3 2)')
+    assert p.run() == 1.
+
+    p = Interpreter('(- 5 1 1)')
+    assert p.run() == 3.
+
+
 def test_eval_nested_plus_expr():
     p = Interpreter('(+ (+ 1 2) (+ 3 4))')
     assert p.run() == 10.
