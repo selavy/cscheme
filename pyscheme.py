@@ -66,6 +66,12 @@ class BuiltinPlus(Builtin):
             result += x
         return result
 
+    def __repr__(self):
+        return 'Plus'
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class Lambda:
     def __init__(self, params, body):
@@ -91,6 +97,23 @@ class Lambda:
         return self.__repr__()
 
 
+class Define:
+    def __init__(self, symbol, value):
+        self.symbol = str(symbol)
+        self.value = value
+
+    def execute(self, env, params):
+        assert not params
+        env[self.symbol] = self.value
+        return None
+
+    def __repr__(self):
+        return f'Define({self.symbol} = {self.value})'
+
+    def __str__(self):
+        return self.__repr__()
+
+
 def eval_symbol(env, x):
     while env is not None:
         try:
@@ -98,7 +121,7 @@ def eval_symbol(env, x):
             break
         except KeyError:
             env = env.get('__parent', None)
-    raise Exception(f"Unbound symbol '{self.value}'")
+    raise Exception(f"Unbound symbol '{x}'")
 
 
 def evaluate(env, x):
@@ -151,7 +174,7 @@ class Interpreter:
     def run(self):
         env = {}
         while self._token != Token.EOF:
-            result = evaluate(env, self.sexpr())
+            result = evaluate(env, self.sexpr(env))
         return result
 
     def readparams(self):
@@ -163,12 +186,12 @@ class Interpreter:
             self._expect(Token.IDENT)
         return rv
 
-    def sexpr(self):
+    def sexpr(self, env):
         value = self._value
         if self._accept(Token.LPAREN):
             result = []
             while not self._accept(Token.RPAREN, allow_eof=False):
-                result.append(self.sexpr())
+                result.append(self.sexpr(env))
             # XXX: not sure this is correct in all cases -- unwrap lambdas
             if len(result) == 1 and isinstance(result[0], Lambda):
                 result = result[0]
@@ -178,8 +201,13 @@ class Interpreter:
             result = BuiltinPlus()
         elif self._accept(Token.LAMBDA):
             params = self.readparams()
-            body = self.sexpr()
+            body = self.sexpr(env)
             result = Lambda(params, body)
+        elif self._accept(Token.DEFINE):
+            symbol = str(self._value)
+            self._expect(Token.IDENT)
+            value = self.sexpr(env)
+            result = Define(symbol, value)
         elif self._accept(Token.IDENT):
             result = str(value)
         else:

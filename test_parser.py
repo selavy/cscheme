@@ -150,3 +150,23 @@ def test_eval_lambda():
 
     p = Interpreter("(((lambda (x) (lambda (x) 5)) 4) 3)")
     assert p.run() == 5
+
+
+def test_eval_multiple_exprs():
+    p = Interpreter("5 4 3 2 1 0")
+    assert p.run() == 0
+
+    p = Interpreter("(define x 5) x")
+    assert p.run() == 5
+
+
+def test_eval_define():
+    p = Interpreter("(define addone (lambda (x) (+ x 1))) (addone 2)")
+    assert p.run() == 3
+
+    p = Interpreter("""
+(define myadd (lambda (x y) (+ x y)))
+(define addone (lambda (x y) (x y 1)))
+(addone myadd 2)
+""")
+    assert p.run() == 3
