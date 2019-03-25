@@ -2,6 +2,7 @@
 
 from enum import Enum, auto
 import re
+import sys
 
 
 class Token(Enum):
@@ -118,21 +119,31 @@ class BuiltinNot(Builtin):
         return not bool(params[0])
 
 
+class BuiltinPrintln(Builtin):
+    def __init__(self):
+        super().__init__("print")
+
+    def execute(self, params):
+        xs = [str(x) for x in params]
+        print(' '.join(xs))
+        return None
+
+
 class Lambda:
     def __init__(self, params, body):
         self.params = params
         self.body = body
         self.name = '<lambda>'
         # TEMP TEMP
-        print(f"Lambda(name={self.name}, params={self.params}, body={self.body})")
+        # print(f"Lambda(name={self.name}, params={self.params}, body={self.body})")
 
     def execute(self, env, params):
         if len(params) != len(self.params):
             raise Exception(f"Lambda expected {len(self.params)} arguments, but received {len(params)}.")
         inner = dict(zip(self.params, params))
         inner['__parent'] = env
-        print("Lambda.execute()")
-        print(env)
+        # print("Lambda.execute()")
+        # print(env)
         return evaluate(inner, self.body)
 
     def __repr__(self):
@@ -180,7 +191,7 @@ def eval_symbol(env, x):
 
 def evaluate(env, x):
     # TEMP TEMP
-    print(f"evaluate({env}, {x})")
+    # print(f"evaluate({env}, {x})")
     if isinstance(x, str):
         result = eval_symbol(env, x)
     elif isinstance(x, float):
@@ -196,7 +207,7 @@ def evaluate(env, x):
         result = xs[0].execute(env, xs[1:])
     else:
         result = x
-    print(f">>> returns = {result}")
+    # print(f">>> returns = {result}")
     return result
 
 
@@ -234,6 +245,7 @@ class Interpreter:
             '-': BuiltinSub,
             '=': BuiltinEq,
             'not': BuiltinNot,
+            'println': BuiltinPrintln,
         }
         while self._token != Token.EOF:
             result = evaluate(env, self.sexpr(env))
@@ -284,3 +296,11 @@ class Interpreter:
             raise Exception("Unexpected token: %s of type %s" %
                             (self._value, self._token))
         return result
+
+
+if __name__ == '__main__':
+    with open(sys.argv[1], 'r') as f:
+        inputs = f.read()
+    print(inputs)
+    interp = Interpreter(inputs)
+    print(interp.run())

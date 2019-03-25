@@ -208,3 +208,8 @@ def test_eval_conditional():
 
     p = Interpreter("(if (not (= 1 1)) 1 2)")
     assert p.run() == 2
+
+
+def test_eval_println():
+    p = Interpreter("(println 1)")
+    assert p.run() == None
