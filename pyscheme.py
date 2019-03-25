@@ -286,9 +286,9 @@ class Interpreter:
             else_branch = self.sexpr(env)
             cond = evaluate(env, cond)
             if bool(cond):
-                rv = if_branch
+                rv = evaluate(env, if_branch)
             else:
-                rv = else_branch
+                rv = evaluate(env, else_branch)
             result = IfStmt(rv)
         elif self._accept(Token.IDENT):
             result = str(value)
@@ -301,6 +301,6 @@ class Interpreter:
 if __name__ == '__main__':
     with open(sys.argv[1], 'r') as f:
         inputs = f.read()
-    print(inputs)
+    print(f"inputs = '{inputs}'")
     interp = Interpreter(inputs)
     print(interp.run())
