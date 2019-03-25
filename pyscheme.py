@@ -16,7 +16,7 @@ class Token(Enum):
     EOF = auto()
 
 
-IDENTPAT = re.compile('[a-zA-Z_+\\-*]')
+IDENTPAT = re.compile('[a-zA-Z_+\\-*?]')
 
 
 def lex(s, i):
@@ -134,16 +134,12 @@ class Lambda:
         self.params = params
         self.body = body
         self.name = '<lambda>'
-        # TEMP TEMP
-        # print(f"Lambda(name={self.name}, params={self.params}, body={self.body})")
 
     def execute(self, env, params):
         if len(params) != len(self.params):
             raise Exception(f"Lambda expected {len(self.params)} arguments, but received {len(params)}.")
         inner = dict(zip(self.params, params))
         inner['__parent'] = env
-        # print("Lambda.execute()")
-        # print(env)
         return evaluate(inner, self.body)
 
     def __repr__(self):
@@ -190,8 +186,6 @@ def eval_symbol(env, x):
 
 
 def evaluate(env, x):
-    # TEMP TEMP
-    # print(f"evaluate({env}, {x})")
     if isinstance(x, str):
         result = eval_symbol(env, x)
     elif isinstance(x, float):
@@ -207,7 +201,6 @@ def evaluate(env, x):
         result = xs[0].execute(env, xs[1:])
     else:
         result = x
-    # print(f">>> returns = {result}")
     return result
 
 
