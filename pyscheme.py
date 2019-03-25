@@ -142,6 +142,15 @@ class Lambda:
         return self.__repr__()
 
 
+class IfStmt:
+    def __init__(self, result):
+        self.result = result
+
+    def execute(self, env, args):
+        assert len(args) == 0
+        return self.result
+
+
 class Define:
     def __init__(self, symbol, value):
         self.symbol = str(symbol)
@@ -176,8 +185,8 @@ def evaluate(env, x):
         result = eval_symbol(env, x)
     elif isinstance(x, float):
         result = x
-    # elif isinstance(x, bool):
-    #     result = x
+    elif isinstance(x, bool):
+        result = x
     elif isinstance(x, Builtin):
         result = x
     elif isinstance(x, Lambda):
@@ -259,6 +268,16 @@ class Interpreter:
             self._expect(Token.IDENT)
             value = self.sexpr(env)
             result = Define(symbol, value)
+        elif self._accept(Token.IF):
+            cond = self.sexpr(env)
+            if_branch = self.sexpr(env)
+            else_branch = self.sexpr(env)
+            cond = evaluate(env, cond)
+            if bool(cond):
+                rv = if_branch
+            else:
+                rv = else_branch
+            result = IfStmt(rv)
         elif self._accept(Token.IDENT):
             result = str(value)
         else:

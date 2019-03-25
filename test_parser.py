@@ -202,5 +202,9 @@ def test_eval_define():
     assert p.run() == 3
 
 
-# def test_eval_conditional():
-#     p = Interpreter("()")
+def test_eval_conditional():
+    p = Interpreter("(if (= 1 1) 1 2)")
+    assert p.run() == 1
+
+    p = Interpreter("(if (not (= 1 1)) 1 2)")
+    assert p.run() == 2
