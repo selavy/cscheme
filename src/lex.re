@@ -202,7 +202,10 @@ bool lex(Input &in) noexcept
             wsp { continue; }
 
             // character and string literals
-            "\"" { if (!lex_str(in, in.cur[-1])) return false; continue; }
+            // TODO: simplify this and do string interpolation of escaped characters later?
+            "\""   { if (!lex_str(in, in.cur[-1])) return false; continue; }
+            // TODO: finish full support of characters: https://docs.racket-lang.org/guide/characters.html
+            "#\\" . { printf("CHARACTER: '%.*s'\n", static_cast<int>(in.cur - in.tok) - 2, in.tok + 2); continue; }
 
             // integer literals
             dec = [1-9][0-9]*;
@@ -257,6 +260,7 @@ bool lex(Input &in) noexcept
             "if"     { printf("IF\n"); continue; }
             "cond"   { printf("COND\n"); continue; }
             "define" { printf("DEFINE\n"); continue; }
+            "void"   { printf("VOID\n"); continue; }
 
             // identifiers
             id = [a-zA-Z_][a-zA-Z_0-9]*;
