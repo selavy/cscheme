@@ -58,7 +58,7 @@ struct Input {
 /*!re2c re2c:define:YYCTYPE = "uint8_t"; */
 
 template<int base>
-static bool adddgt(unsigned long &u, unsigned long d)
+static bool adddgt(uint64_t &u, uint64_t d)
 {
     if (u > (ULONG_MAX - d) / base) {
         return false;
@@ -67,17 +67,20 @@ static bool adddgt(unsigned long &u, unsigned long d)
     return true;
 }
 
-static bool lex_dec(const unsigned char *s, const unsigned char *e, unsigned long &u)
+static bool lex_dec(const unsigned char *s, const unsigned char *e, uint64_t &u)
 {
+    auto* tok = s;
     for (u = 0; s < e; ++s) {
         if (!adddgt<10>(u, *s - 0x30u)) {
+            // TODO: error handling
+            fprintf(stderr, "lexer error: decimal overflow: '%.*s'\n", static_cast<int>(e - tok), (const char*)tok);
             return false;
         }
     }
     return true;
 }
 
-static bool lex_hex(const unsigned char *s, const unsigned char *e, unsigned long &u)
+static bool lex_hex(const unsigned char *s, const unsigned char *e, uint64_t &u)
 {
     for (u = 0, s += 2; s < e;) {
     /*!re2c
@@ -125,16 +128,24 @@ exp:
 sfx:
     /*!re2c
         *     { goto end; }
-        [fF]  { if (d > FLT_MAX) return false; goto end; }
+        [fF]
+        {
+            if (d > FLT_MAX) {
+                // TODO: error handling
+                fprintf(stderr, "lexer error: number overflow\n");
+                return false;
+            }
+            goto end;
+        }
     */
 end:
-    printf("NUMBER: %g\n", d);
+    printf("NUMBER: %f\n", d);
     return true;
 }
 
 bool lex(Input &in) noexcept
 {
-    unsigned long ival;
+    uint64_t ival;
     for (;;) {
         in.tok = in.cur;
         /*!re2c
@@ -179,7 +190,14 @@ bool lex(Input &in) noexcept
             frc = [0-9]* "." [0-9]+ | [0-9]+ ".";
             exp = 'e' [+-]? [0-9]+;
             flt = (frc exp? | [0-9]+ exp) [fFlL]?;
-            flt { if (lex_flt(in.tok)) continue; return false; }
+            flt
+            {
+                if (!lex_flt(in.tok)) {
+                    fprintf(stderr, "lexer error: failed to parse float\n");
+                    return false;
+                }
+                continue;
+            }
 
             // boolean literals
             "#f" { printf("BOOLEAN: #f\n"); continue; }
