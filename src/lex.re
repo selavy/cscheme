@@ -6,8 +6,6 @@
 #include <climits>
 #include <string>
 
-namespace cscheme { namespace lex {
-
 /*!max:re2c*/
 // static constexpr size_t SIZE = 64 * 1024;
 static constexpr size_t SIZE = 8 * 1024;
@@ -178,6 +176,9 @@ static bool lex_str(Input &in, uint8_t q) noexcept
     return true;
 }
 
+// enum Result { OK, ERROR, MORE_INPUT };
+// Result lex(Input& in, Value& v)
+
 bool lex(Input &in) noexcept
 {
     uint64_t ival;
@@ -274,5 +275,3 @@ bool lex(Input &in) noexcept
         */
     }
 }
-
-} /*lex*/ } /*cscheme*/

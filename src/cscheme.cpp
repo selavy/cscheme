@@ -18,8 +18,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    cscheme::lex::Input in(file);
-    if (!cscheme::lex::lex(in)) {
+    Input in(file);
+    if (!lex(in)) {
         printf("... error\n");
     } else {
         printf("\n");
