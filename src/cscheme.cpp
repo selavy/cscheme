@@ -1,11 +1,40 @@
 #include <cstdio>
 #include <cassert>
+#include <list>
 #include "value.h" // TODO: this is evil, must be included _before_ lex.cpp
 #include "lex.cpp"
 
 void tests();
 
 enum Result { OK, ERROR, DONE };
+
+Value sexpr(Input& in)
+{
+    // precondition: last token == LPAREN
+
+    // eval first element to get procedure to call
+
+    std::list<Value*> vals;
+    for (;;) {
+        Value v;
+        auto tok = lex(in, v);
+        if (tok == Token::ERROR) {
+            throw std::runtime_error("error: invalid input");
+        } else if (tok == Token::RPAREN) {
+            break;
+        } else if (tok == Token::LPAREN) {
+            v = sexpr(in);
+            vals.push_front(new Value(v));
+        } else {
+            vals.push_front(new Value(v));
+        }
+    }
+    Value cur = mkvoid();
+    for (auto* v : vals) {
+        cur = mkpair(v, &cur);
+    }
+    return cur;
+}
 
 Result eval(Input& in, Value& val)
 {
@@ -28,9 +57,10 @@ Result eval(Input& in, Value& val)
             break;
     }
 
-    // /if (tok == Token::LPAREN) {
-    // /    sexpr()
-    // /}
+    if (tok == Token::LPAREN) {
+        val = sexpr(in);
+        return OK;
+    }
 
     fprintf(stderr, "error: invalid token in context: %s\n", TokenStrings[(int)tok]);
     return ERROR;

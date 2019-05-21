@@ -276,6 +276,7 @@ Token lex(Input& in, Value& v) noexcept
             ">="  { return Token::GTE; }
             "<="  { return Token::LTE; }
             "\."  { return Token::DOT; }
+            "'"   { return Token::QUOTE; }
 
             // keywords
             "if"     { return Token::IF; }

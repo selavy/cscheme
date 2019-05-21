@@ -22,6 +22,7 @@ enum class Token : int
     CHAR,
     STRING,
     SYMBOL,
+    QUOTE,
 
     IF,
     COND,
@@ -50,6 +51,7 @@ const char* TokenStrings[] = {
     "CHAR",
     "STRING",
     "SYMBOL",
+    "QUOTE",
     "IF",
     "COND",
     "DEFINE",
