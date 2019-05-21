@@ -203,9 +203,22 @@ bool lex(Input &in) noexcept
             "#f" { printf("BOOLEAN: #f\n"); continue; }
             "#t" { printf("BOOLEAN: #t\n"); continue; }
 
-            "(" { printf("LPAREN\n"); continue; }
-            ")" { printf("RPAREN\n"); continue; }
-            "if" { printf("IF\n"); continue; }
+            // operators
+            "("  { printf("LPAREN\n"); continue; }
+            ")"  { printf("RPAREN\n"); continue; }
+            "+"  { printf("PLUS\n"); continue; }
+            "-"  { printf("MINUS\n"); continue; }
+            "*"  { printf("MULTIPLY\n"); continue; }
+            "/"  { printf("DIVIDE\n"); continue; }
+            ">"  { printf("GT\n"); continue; }
+            "<"  { printf("LT\n"); continue; }
+            ">=" { printf("GTE\n"); continue; }
+            "<=" { printf("LTE\n"); continue; }
+
+            // keywords
+            "if"     { printf("IF\n"); continue; }
+            "cond"   { printf("COND\n"); continue; }
+            "define" { printf("DEFINE\n"); continue; }
 
             // identifiers
             id = [a-zA-Z_][a-zA-Z_0-9]*;
