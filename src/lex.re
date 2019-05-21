@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cfloat>
 #include <climits>
+#include <string>
 
 namespace cscheme { namespace lex {
 
@@ -143,6 +144,40 @@ end:
     return true;
 }
 
+static bool lex_str(Input &in, uint8_t q) noexcept
+{
+    std::string result;
+    for (uint64_t u = q; ; result += u) {
+        in.tok = in.cur;
+        /*!re2c
+            re2c:define:YYCURSOR = in.cur;
+            re2c:define:YYMARKER = in.mar;
+            re2c:define:YYLIMIT = in.lim;
+            re2c:yyfill:enable = 1;
+            re2c:define:YYFILL = "if (!in.fill(@@)) return false;";
+            re2c:define:YYFILL:naked = 1;
+            *                    { return false; }
+            [^\n\\]              { u = in.tok[0]; if (u == q) break; continue; }
+            "\\a"                { u = '\a'; continue; }
+            "\\b"                { u = '\b'; continue; }
+            "\\f"                { u = '\f'; continue; }
+            "\\n"                { u = '\n'; continue; }
+            "\\r"                { u = '\r'; continue; }
+            "\\t"                { u = '\t'; continue; }
+            "\\v"                { u = '\v'; continue; }
+            "\\\\"               { u = '\\'; continue; }
+            "\\'"                { u = '\''; continue; }
+            "\\\""               { u = '"';  continue; }
+            "\\?"                { u = '?';  continue; }
+            "\\u" [0-9a-fA-F]{4} { lex_hex(in.tok, in.cur, u); continue; }
+            "\\U" [0-9a-fA-F]{8} { lex_hex(in.tok, in.cur, u); continue; }
+            "\\x" [0-9a-fA-F]+   { if (!lex_hex(in.tok, in.cur, u)) return false; continue; }
+        */
+    }
+    printf("STRING: \"%s\"\n", result.c_str());
+    return true;
+}
+
 bool lex(Input &in) noexcept
 {
     uint64_t ival;
@@ -164,7 +199,10 @@ bool lex(Input &in) noexcept
             mcm = "/*" ([^*] | ("*" [^/]))* "*""/";
             scm = "//" [^\n]* "\n";
             wsp = ([ \t\v\n\r] | scm | mcm)+;
-            wsp { printf("WHITESPACE\n"); continue; }
+            wsp { continue; }
+
+            // character and string literals
+            "\"" { if (!lex_str(in, in.cur[-1])) return false; continue; }
 
             // integer literals
             dec = [1-9][0-9]*;
