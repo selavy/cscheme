@@ -1,5 +1,3 @@
-#pragma once
-
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
@@ -187,6 +185,8 @@ bool lex(Input &in) noexcept
             "#f" { printf("BOOLEAN: #f\n"); continue; }
             "#t" { printf("BOOLEAN: #t\n"); continue; }
 
+            "(" { printf("LPAREN\n"); continue; }
+            ")" { printf("RPAREN\n"); continue; }
             "if" { printf("IF\n"); continue; }
 
             // identifiers
