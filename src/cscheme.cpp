@@ -3,9 +3,11 @@
 #include "value.h" // TODO: this is evil, must be included _before_ lex.cpp
 #include "lex.cpp"
 
+void tests();
+
 int main(int argc, char** argv)
 {
-    // printf("$ cscheme> \n");
+    tests();
 
     if (argc != 2) {
         printf ("usage: %s <filename>\n", argv[0]);
@@ -35,10 +37,11 @@ int main(int argc, char** argv)
 
     fclose(file);
 
-    //
-    // Unit Tests
-    //
+    return 0;
+}
 
+void tests()
+{
     {
         auto v = mkvoid();
         assert(v.kind == Value::VOID);
@@ -83,7 +86,7 @@ int main(int argc, char** argv)
         assert(istruthy(p) == true);
     }
 
-    printf("PASSED!\n");
+    printf("TESTS PASSED!\n\n");
 
-    return 0;
 }
+
