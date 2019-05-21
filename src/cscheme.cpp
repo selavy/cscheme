@@ -5,15 +5,16 @@
 
 void tests();
 
-bool evaluate(Input& in, Value& val)
+enum Result { OK, ERROR, DONE };
+
+Result eval(Input& in, Value& val)
 {
     Token tok = lex(in, val);
     if (tok == Token::ERROR) {
         fprintf(stderr, "error: invalid input!");
-        return false;
+        return ERROR;
     } else if (tok == Token::FINISHED) {
-        val = mkvoid();
-        return true;
+        return DONE;
     }
 
     switch (tok) {
@@ -22,13 +23,17 @@ bool evaluate(Input& in, Value& val)
         case Token::CHAR:
         case Token::STRING:
         case Token::SYMBOL:
-            return true;
+            return OK;
         default:
             break;
     }
 
+    // /if (tok == Token::LPAREN) {
+    // /    sexpr()
+    // /}
+
     fprintf(stderr, "error: invalid token in context: %s\n", TokenStrings[(int)tok]);
-    return false;
+    return ERROR;
 }
 
 int main(int argc, char** argv)
@@ -49,13 +54,14 @@ int main(int argc, char** argv)
     Input in(file);
     Value val;
     for (;;) {
-        if (!evaluate(in, val)) {
+        auto ok = eval(in, val);
+        if (ok == DONE) {
+            break;
+        } else if (ok == ERROR) {
+            fprintf(stderr, "error: failed to evaluate input!");
             break;
         }
         std::cout << "> " << val << std::endl;
-        // printf("Received token: %s\n", TokenStrings[(int)token]);
-        // TEMP TEMP
-        if (val.kind == Value::VOID) break;
     }
     printf("\n");
 
