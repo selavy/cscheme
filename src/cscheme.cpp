@@ -5,6 +5,32 @@
 
 void tests();
 
+bool evaluate(Input& in, Value& val)
+{
+    Token tok = lex(in, val);
+    if (tok == Token::ERROR) {
+        fprintf(stderr, "error: invalid input!");
+        return false;
+    } else if (tok == Token::FINISHED) {
+        val = mkvoid();
+        return true;
+    }
+
+    switch (tok) {
+        case Token::NUMBER:
+        case Token::BOOL:
+        case Token::CHAR:
+        case Token::STRING:
+        case Token::SYMBOL:
+            return true;
+        default:
+            break;
+    }
+
+    fprintf(stderr, "error: invalid token in context: %s\n", TokenStrings[(int)tok]);
+    return false;
+}
+
 int main(int argc, char** argv)
 {
     tests();
@@ -21,17 +47,15 @@ int main(int argc, char** argv)
     }
 
     Input in(file);
-    Value v;
+    Value val;
     for (;;) {
-        auto token = lex(in, v);
-        if (token == Token::ERROR) {
-            fprintf(stderr, "error: invalid input!");
-            break;
-        } else if (token == Token::FINISHED) {
+        if (!evaluate(in, val)) {
             break;
         }
-
-        printf("Received token: %s\n", TokenStrings[(int)token]);
+        std::cout << "> " << val << std::endl;
+        // printf("Received token: %s\n", TokenStrings[(int)token]);
+        // TEMP TEMP
+        if (val.kind == Value::VOID) break;
     }
     printf("\n");
 

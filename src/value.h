@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <cassert>
 
@@ -119,7 +120,7 @@ Value cons(Value* car, Value* cdr) noexcept {
 
 Value NIL = mkvoid();
 
-bool istruthy(Value v) noexcept {
+inline bool istruthy(Value v) noexcept {
     switch (v.kind) {
         case Value::VOID:   return false;
         case Value::NUMBER: return v.num != 0.0;
@@ -132,5 +133,21 @@ bool istruthy(Value v) noexcept {
     }
     assert(false);
     return false;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Value& v)
+{
+    switch (v.kind)
+    {
+        case Value::VOID:   os << "#<void>"; break;
+        case Value::NUMBER: os << v.num; break;
+        case Value::BOOL:   os << (istruthy(v) ? "#t" : "#f"); break;
+        case Value::STRING: os << "\"" << v.str << "\""; break;
+        case Value::CHAR:   os << "#\\" << v.ch; break;
+        case Value::PAIR:   os << "( " << *v.p.car << " . " << *v.p.cdr << " )"; break;
+        case Value::PROC:   os << "#<procedure>"; break;
+        case Value::SYMBOL: os << "'" << v.str; break;
+    }
+    return os;
 }
 
