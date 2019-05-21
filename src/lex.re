@@ -181,6 +181,7 @@ static bool lex_str(Input &in, uint8_t q) noexcept
 bool lex(Input &in) noexcept
 {
     uint64_t ival;
+    size_t linum = 1;
     for (;;) {
         in.tok = in.cur;
         /*!re2c
@@ -196,10 +197,14 @@ bool lex(Input &in) noexcept
             end { return in.lim - in.tok == YYMAXFILL; }
 
             // whitespaces
-            mcm = "/*" ([^*] | ("*" [^/]))* "*""/";
-            scm = "//" [^\n]* "\n";
-            wsp = ([ \t\v\n\r] | scm | mcm)+;
-            wsp { continue; }
+            // mcm = "/*" ([^*] | ("*" [^/]))* "*""/";
+            // scm = "//" [^\n]* "\n";
+            // // TODO: how to increment line number in multi-line comments?
+            // mcm = "#|" ([^|] | ("|" [^\#]))* "|#";
+            scm = ";" [^\n]* "\n";
+            [ \t\v]+ { continue; }
+            newline = [\n\r] | scm;
+            newline { ++linum; printf("BEGINNING LINE NUMBER: %zu\n", linum); continue; }
 
             // character and string literals
             // TODO: simplify this and do string interpolation of escaped characters later?
@@ -255,6 +260,7 @@ bool lex(Input &in) noexcept
             "<"  { printf("LT\n"); continue; }
             ">=" { printf("GTE\n"); continue; }
             "<=" { printf("LTE\n"); continue; }
+            "\."  { printf("PERIOD\n"); continue; }
 
             // keywords
             "if"     { printf("IF\n"); continue; }

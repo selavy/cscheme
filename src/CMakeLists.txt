@@ -10,5 +10,6 @@ target_include_directories(Lexer INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(cscheme
     cscheme.cpp
+    value.h
     )
 target_link_libraries(cscheme PUBLIC Flags Lexer)
