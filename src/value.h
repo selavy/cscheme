@@ -3,16 +3,58 @@
 #include <string>
 #include <cassert>
 
-enum Kind
+enum class Token : int
 {
-    VOID   = 0x0,
-    NUMBER = 0x1,
-    BOOL   = 0x2,
-    STRING = 0x3,
-    CHAR   = 0x4,
-    PAIR   = 0x5,
-    PROC   = 0x6,
-    SYMBOL = 0x7,
+    LPAREN,
+    RPAREN,
+    DOT,
+    PLUS,
+    MINUS,
+    MULTIPLY,
+    DIVIDE,
+    GT,
+    LT,
+    GTE,
+    LTE,
+    NUMBER,
+    BOOL,
+    CHAR,
+    STRING,
+    SYMBOL,
+
+    IF,
+    COND,
+    DEFINE,
+    NIL,
+
+    // result
+    FINISHED,
+    ERROR,
+};
+
+const char* TokenStrings[] = {
+    "LPAREN",
+    "RPAREN",
+    "DOT",
+    "PLUS",
+    "MINUS",
+    "MULTIPLY",
+    "DIVIDE",
+    "GT",
+    "LT",
+    "GTE",
+    "LTE",
+    "NUMBER",
+    "BOOL",
+    "CHAR",
+    "STRING",
+    "SYMBOL",
+    "IF",
+    "COND",
+    "DEFINE",
+    "NIL",
+    "FINISHED",
+    "ERROR",
 };
 
 struct Value;
@@ -25,6 +67,17 @@ struct Pair
 // TODO: use tagged pointer
 struct Value
 {
+    enum Kind
+    {
+        VOID   = 0x0,
+        NUMBER = 0x1,
+        BOOL   = 0x2,
+        STRING = 0x3,
+        CHAR   = 0x4,
+        PAIR   = 0x5,
+        PROC   = 0x6,
+        SYMBOL = 0x7,
+    };
     Kind kind;
 
     // TODO: fit into union or variant
@@ -37,27 +90,27 @@ struct Value
 };
 
 Value mkvoid() noexcept {
-    return { Kind::VOID };
+    return { Value::VOID };
 }
 
 Value mknumber(double v) noexcept {
-    return { Kind::NUMBER, "", v };
+    return { Value::NUMBER, "", v };
 }
 
 Value mkbool(bool v) noexcept {
-    return { Kind::BOOL, "", v ? 1.0 : 0.0 };
+    return { Value::BOOL, "", v ? 1.0 : 0.0 };
 }
 
 Value mkstring(std::string s) noexcept {
-    return { Kind::STRING, std::move(s) };
+    return { Value::STRING, std::move(s) };
 }
 
 Value mkchar(char ch) noexcept {
-    return { Kind::CHAR, "", 0.0, ch };
+    return { Value::CHAR, "", 0.0, ch };
 }
 
 Value mkpair(Value* car, Value* cdr) noexcept {
-    return { Kind::PAIR, "", 0.0, 0, { car, cdr} };
+    return { Value::PAIR, "", 0.0, 0, { car, cdr} };
 }
 
 Value cons(Value* car, Value* cdr) noexcept {
@@ -68,14 +121,14 @@ Value NIL = mkvoid();
 
 bool istruthy(Value v) noexcept {
     switch (v.kind) {
-        case Kind::VOID:   return false;
-        case Kind::NUMBER: return v.num != 0.0;
-        case Kind::BOOL:   return v.num != 0.0;
-        case Kind::STRING: return !v.str.empty();
-        case Kind::CHAR:   return true;
-        case Kind::PAIR:   return true;
-        case Kind::PROC:   return true;
-        case Kind::SYMBOL: return true;
+        case Value::VOID:   return false;
+        case Value::NUMBER: return v.num != 0.0;
+        case Value::BOOL:   return v.num != 0.0;
+        case Value::STRING: return !v.str.empty();
+        case Value::CHAR:   return true;
+        case Value::PAIR:   return true;
+        case Value::PROC:   return true;
+        case Value::SYMBOL: return true;
     }
     assert(false);
     return false;

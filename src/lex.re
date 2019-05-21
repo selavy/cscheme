@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <climits>
 #include <string>
+#include "value.h"
 
 /*!max:re2c*/
 // static constexpr size_t SIZE = 64 * 1024;
@@ -93,7 +94,7 @@ static bool lex_hex(const unsigned char *s, const unsigned char *e, uint64_t &u)
     return true;
 }
 
-static bool lex_flt(const unsigned char *s)
+static bool lex_flt(const uint8_t *s, Value& v)
 {
     double d = 0;
     double x = 1;
@@ -138,11 +139,11 @@ sfx:
         }
     */
 end:
-    printf("NUMBER: %f\n", d);
+    v = mknumber(d);
     return true;
 }
 
-static bool lex_str(Input &in, uint8_t q) noexcept
+static bool lex_str(Input &in, uint8_t q, Value& v) noexcept
 {
     std::string result;
     for (uint64_t u = q; ; result += u) {
@@ -172,17 +173,14 @@ static bool lex_str(Input &in, uint8_t q) noexcept
             "\\x" [0-9a-fA-F]+   { if (!lex_hex(in.tok, in.cur, u)) return false; continue; }
         */
     }
-    printf("STRING: \"%s\"\n", result.c_str());
+    v = mkstring(result);
     return true;
 }
 
-// enum Result { OK, ERROR, MORE_INPUT };
-// Result lex(Input& in, Value& v)
-
-bool lex(Input &in) noexcept
+Token lex(Input& in, Value& v) noexcept
 {
     uint64_t ival;
-    size_t linum = 1;
+
     for (;;) {
         in.tok = in.cur;
         /*!re2c
@@ -190,12 +188,12 @@ bool lex(Input &in) noexcept
             re2c:define:YYMARKER = in.mar;
             re2c:define:YYLIMIT = in.lim;
             re2c:yyfill:enable = 1;
-            re2c:define:YYFILL = "if (!in.fill(@@)) return false;";
+            re2c:define:YYFILL = "if (!in.fill(@@)) return Token::ERROR;";
             re2c:define:YYFILL:naked = 1;
 
             end = "\x00";
-            *   { return false; }
-            end { return in.lim - in.tok == YYMAXFILL; }
+            *   { return Token::ERROR; }
+            end { return in.lim - in.tok == YYMAXFILL ? Token::FINISHED : Token::ERROR; }
 
             // whitespaces
             // mcm = "/*" ([^*] | ("*" [^/]))* "*""/";
@@ -205,13 +203,26 @@ bool lex(Input &in) noexcept
             scm = ";" [^\n]* "\n";
             [ \t\v]+ { continue; }
             newline = [\n\r] | scm;
-            newline { ++linum; printf("BEGINNING LINE NUMBER: %zu\n", linum); continue; }
+            newline { continue; }
 
-            // character and string literals
             // TODO: simplify this and do string interpolation of escaped characters later?
-            "\""   { if (!lex_str(in, in.cur[-1])) return false; continue; }
+            // string literals
+            "\""
+            {
+                if (!lex_str(in, in.cur[-1], v)) {
+                    return Token::ERROR;
+                }
+                return Token::STRING;
+            }
+
             // TODO: finish full support of characters: https://docs.racket-lang.org/guide/characters.html
-            "#\\" . { printf("CHARACTER: '%.*s'\n", static_cast<int>(in.cur - in.tok) - 2, in.tok + 2); continue; }
+            // characters
+            "#\\" .
+            {
+                assert((in.cur - in.tok) == 3);
+                v = mkchar(in.tok[2]);
+                return Token::CHAR;
+            }
 
             // integer literals
             dec = [1-9][0-9]*;
@@ -219,18 +230,20 @@ bool lex(Input &in) noexcept
             dec
             {
                 if (!lex_dec(in.tok, in.cur, ival)) {
-                    return false;
+                    // TODO: put error message in value
+                    return Token::ERROR;
                 }
-                printf("DECIMAL INTEGER: %lu\n", ival);
-				continue;
+                v = mknumber((double)ival);
+                return Token::NUMBER;
             }
             hex
             {
                 if (!lex_hex(in.tok, in.cur, ival)) {
-                    return false;
+                    // TODO: put error message in value
+                    return Token::ERROR;
                 }
-                printf("HEX INTEGER: %lu\n", ival);
-				continue;
+                v = mknumber((double)ival);
+                return Token::NUMBER;
             }
 
             // floating literals
@@ -239,39 +252,47 @@ bool lex(Input &in) noexcept
             flt = (frc exp? | [0-9]+ exp) [fFlL]?;
             flt
             {
-                if (!lex_flt(in.tok)) {
+                if (!lex_flt(in.tok, v)) {
+                    // TODO: put error message in value
                     fprintf(stderr, "lexer error: failed to parse float\n");
-                    return false;
+                    return Token::ERROR;
                 }
-                continue;
+                return Token::NUMBER;
             }
 
             // boolean literals
-            "#f" { printf("BOOLEAN: #f\n"); continue; }
-            "#t" { printf("BOOLEAN: #t\n"); continue; }
+            "#f" { v = mkbool(false); return Token::BOOL; }
+            "#t" { v = mkbool(true);  return Token::BOOL; }
 
             // operators
-            "("  { printf("LPAREN\n"); continue; }
-            ")"  { printf("RPAREN\n"); continue; }
-            "+"  { printf("PLUS\n"); continue; }
-            "-"  { printf("MINUS\n"); continue; }
-            "*"  { printf("MULTIPLY\n"); continue; }
-            "/"  { printf("DIVIDE\n"); continue; }
-            ">"  { printf("GT\n"); continue; }
-            "<"  { printf("LT\n"); continue; }
-            ">=" { printf("GTE\n"); continue; }
-            "<=" { printf("LTE\n"); continue; }
-            "\."  { printf("PERIOD\n"); continue; }
+            "("   { return Token::LPAREN; }
+            ")"   { return Token::RPAREN; }
+            "+"   { return Token::PLUS; }
+            "-"   { return Token::MINUS; }
+            "*"   { return Token::MULTIPLY; }
+            "/"   { return Token::DIVIDE; }
+            ">"   { return Token::GT; }
+            "<"   { return Token::LT; }
+            ">="  { return Token::GTE; }
+            "<="  { return Token::LTE; }
+            "\."  { return Token::DOT; }
 
             // keywords
-            "if"     { printf("IF\n"); continue; }
-            "cond"   { printf("COND\n"); continue; }
-            "define" { printf("DEFINE\n"); continue; }
-            "void"   { printf("VOID\n"); continue; }
+            "if"     { return Token::IF; }
+            "cond"   { return Token::COND; }
+            "define" { return Token::DEFINE; }
+            "nil"    { return Token::NIL; }
 
-            // identifiers
+            // symbols
             id = [a-zA-Z_][a-zA-Z_0-9]*;
-            id { printf("IDENT: '%.*s'\n", static_cast<int>(in.cur - in.tok), in.tok); continue; }
+            id
+            {
+                std::string symbol{(const char*)in.tok, (size_t)(in.cur - in.tok)};
+                v = mkstring(std::move(symbol));
+                return Token::SYMBOL;
+            }
         */
     }
+
+    return Token::ERROR;
 }

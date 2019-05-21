@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cassert>
+#include "value.h" // TODO: this is evil, must be included _before_ lex.cpp
 #include "lex.cpp"
-#include "value.h"
 
 int main(int argc, char** argv)
 {
@@ -19,11 +19,19 @@ int main(int argc, char** argv)
     }
 
     Input in(file);
-    if (!lex(in)) {
-        printf("... error\n");
-    } else {
-        printf("\n");
+    Value v;
+    for (;;) {
+        auto token = lex(in, v);
+        if (token == Token::ERROR) {
+            fprintf(stderr, "error: invalid input!");
+            break;
+        } else if (token == Token::FINISHED) {
+            break;
+        }
+
+        printf("Received token: %s\n", TokenStrings[(int)token]);
     }
+    printf("\n");
 
     fclose(file);
 
@@ -33,12 +41,12 @@ int main(int argc, char** argv)
 
     {
         auto v = mkvoid();
-        assert(v.kind == Kind::VOID);
+        assert(v.kind == Value::VOID);
     }
 
     {
         auto n = mknumber(42);
-        assert(n.kind == Kind::NUMBER);
+        assert(n.kind == Value::NUMBER);
         assert(n.num  == 42.0);
         assert(n.str.empty());
         assert(istruthy(n) == true);
@@ -71,7 +79,7 @@ int main(int argc, char** argv)
     {
         auto v = mknumber(42);
         auto p = cons(&v, &NIL);
-        assert(p.kind == Kind::PAIR);
+        assert(p.kind == Value::PAIR);
         assert(istruthy(p) == true);
     }
 
