@@ -8,62 +8,71 @@ void tests();
 
 enum Result { OK, ERROR, DONE };
 
-Value sexpr(Input& in)
+struct Tokens
 {
-    // precondition: last token == LPAREN
+    Tokens(FILE* f) noexcept : input(f), token(Token::ERROR) {}
 
-    // eval first element to get procedure to call
-
-    std::list<Value*> vals;
-    for (;;) {
-        Value v;
-        auto tok = lex(in, v);
-        if (tok == Token::ERROR) {
-            throw std::runtime_error("error: invalid input");
-        } else if (tok == Token::RPAREN) {
-            break;
-        } else if (tok == Token::LPAREN) {
-            v = sexpr(in);
-            vals.push_front(new Value(v));
-        } else {
-            vals.push_front(new Value(v));
+    void next()
+    {
+        if (token == Token::FINISHED) {
+            return;
+        }
+        token = lex(input, value);
+        if (token == Token::ERROR) {
+            throw std::runtime_error{"error parsing input"};
         }
     }
-    Value cur = mkvoid();
-    for (auto* v : vals) {
-        cur = mkpair(v, &cur);
-    }
-    return cur;
-}
 
-Result eval(Input& in, Value& val)
+    void expect(Token t)
+    {
+        if (token != t) {
+            // TODO: need printf-style formatter for exceptions
+            throw std::runtime_error{"unexpected token"};
+        }
+        next();
+    }
+
+    bool match(Token t) {
+        if (token == t) {
+            next();
+            return true;
+        }
+        return false;
+    }
+
+    Value& peek() {
+        return value;
+    }
+
+    Input input;
+    Token token;
+    Value value;
+};
+
+Result eval(Tokens& tokens, Value& result)
 {
-    Token tok = lex(in, val);
-    if (tok == Token::ERROR) {
-        fprintf(stderr, "error: invalid input!");
-        return ERROR;
-    } else if (tok == Token::FINISHED) {
-        return DONE;
+    Value& value = tokens.peek();
+    if (tokens.match(Token::FINISHED)) {
+        return Result::DONE;
+    } else if (tokens.match(Token::NUMBER)) {
+        result = value;
+        return Result::OK;
+    } else if (tokens.match(Token::BOOL)) {
+        result = value;
+        return Result::OK;
+    } else if (tokens.match(Token::CHAR)) {
+        result = value;
+        return Result::OK;
+    } else if (tokens.match(Token::STRING)) {
+        result = value;
+        return Result::OK;
+    } else if (tokens.match(Token::SYMBOL)) {
+        result = value;
+        return Result::OK;
+    } else {
+        result = mkstring("invalid input");
+        return Result::ERROR;
     }
-
-    switch (tok) {
-        case Token::NUMBER:
-        case Token::BOOL:
-        case Token::CHAR:
-        case Token::STRING:
-        case Token::SYMBOL:
-            return OK;
-        default:
-            break;
-    }
-
-    if (tok == Token::LPAREN) {
-        val = sexpr(in);
-        return OK;
-    }
-
-    fprintf(stderr, "error: invalid token in context: %s\n", TokenStrings[(int)tok]);
-    return ERROR;
 }
 
 int main(int argc, char** argv)
@@ -81,10 +90,11 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    Input in(file);
+    Tokens tokens(file);
+    tokens.next();
     Value val;
     for (;;) {
-        auto ok = eval(in, val);
+        auto ok = eval(tokens, val);
         if (ok == DONE) {
             break;
         } else if (ok == ERROR) {
