@@ -49,6 +49,20 @@ struct Tokens
     Value value;
 };
 
+Status readsexpr(Tokens& tokens, Value& sexpr)
+{
+    Value& value = tokens.peek();
+    while (!tokens.match(RPAREN)) {
+        if (tokens.match(FINISHED)) {
+            sexpr = mkstring("missing ')'");
+            return Status::ERROR;
+        } else if (tokens.match())
+
+
+    }
+    return Status::OK;
+}
+
 Status eval(Tokens& tokens, Value& result)
 {
     Value& value = tokens.peek();
@@ -68,6 +82,13 @@ Status eval(Tokens& tokens, Value& result)
         return Status::OK;
     } else if (tokens.match(Token::SYMBOL)) {
         result = value;
+        return Status::OK;
+    } else if (tokens.match(Token::LPAREN)) {
+        Status ok = readsexpr(result);
+        if (ok != Status::OK) {
+            return ok;
+        }
+        // TODO: evaluate s-expression
         return Status::OK;
     } else {
         result = mkstring("invalid input");
