@@ -6,7 +6,7 @@
 
 void tests();
 
-enum Result { OK, ERROR, DONE };
+enum Status { OK, ERROR, DONE };
 
 struct Tokens
 {
@@ -49,29 +49,29 @@ struct Tokens
     Value value;
 };
 
-Result eval(Tokens& tokens, Value& result)
+Status eval(Tokens& tokens, Value& result)
 {
     Value& value = tokens.peek();
     if (tokens.match(Token::FINISHED)) {
-        return Result::DONE;
+        return Status::DONE;
     } else if (tokens.match(Token::NUMBER)) {
         result = value;
-        return Result::OK;
+        return Status::OK;
     } else if (tokens.match(Token::BOOL)) {
         result = value;
-        return Result::OK;
+        return Status::OK;
     } else if (tokens.match(Token::CHAR)) {
         result = value;
-        return Result::OK;
+        return Status::OK;
     } else if (tokens.match(Token::STRING)) {
         result = value;
-        return Result::OK;
+        return Status::OK;
     } else if (tokens.match(Token::SYMBOL)) {
         result = value;
-        return Result::OK;
+        return Status::OK;
     } else {
         result = mkstring("invalid input");
-        return Result::ERROR;
+        return Status::ERROR;
     }
 }
 
