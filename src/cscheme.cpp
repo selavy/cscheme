@@ -60,39 +60,43 @@ struct Tokens
     Value* value;
 };
 
-// Value mklist(const std::vector<Value>& values)
-// {
-//     if (values.empty()) {
-//         return NIL;
-//     }
-//     Value* cur = new Value(mkpair(nullptr, &NIL));
-//     for (auto rit = values.rbegin(); rit != values.rend(); ++rit) {
-//         cur->p.car = 
-//     }
-// }
-
-#if 0
-Status readsexpr(Tokens& tokens, Value& result)
+Value* mklist(const std::vector<Value*>& values)
 {
-    std::vector<Value> stk;
-    Value& value = tokens.peek();
+    if (values.empty()) {
+        return NIL;
+    }
+
+    // TODO: implement
+    return mkpair(values[0], NIL);
+
+    // Value* cur = new Value(mkpair(nullptr, NIL));
+    // for (auto rit = values.rbegin(); rit != values.rend(); ++rit) {
+    //     cur->p.car = 
+    // }
+}
+
+Status eval(Tokens& tokens, Value** result);
+
+Status readsexpr(Tokens& tokens, Value** result)
+{
+    std::vector<Value*> stk;
     while (!tokens.match(Token::RPAREN)) {
         if (tokens.match({ Token::FINISHED, Token::ERROR })) {
-            result = mkstring("missing ')'");
+            *result = mkstring("missing ')'");
             return Status::ERROR;
         }
-        Value value;
-        Status ok = eval(tokens, value);
+        Value* value;
+        Status ok = eval(tokens, &value);
         if (ok != Status::OK) {
-            result = mkstring("error reading s-expression");
+            // *result = mkstring("failed to read s-expression");
+            *result = value;
             return Status::ERROR;
         }
         stk.push_back(value);
     }
-    result = mklist(stk);
+    *result = mklist(stk);
     return Status::OK;
 }
-#endif
 
 Status eval(Tokens& tokens, Value** result)
 {
@@ -108,11 +112,14 @@ Status eval(Tokens& tokens, Value** result)
                 })) {
         *result = new Value(*value);
         return Status::OK;
+    } else if (tokens.match(Token::PLUS)) {
+        *result = mkbuiltin("+");
+        return Status::OK;
     } else if (tokens.match(Token::LPAREN)) {
-        // Status ok = readsexpr(tokens, result);
-        // if (ok != Status::OK) {
-        //     return ok;
-        // }
+        Status ok = readsexpr(tokens, result);
+        if (ok != Status::OK) {
+            return ok;
+        }
         // TODO: evaluate s-expression
         return Status::OK;
     } else {
@@ -136,12 +143,15 @@ int main(int argc, char** argv)
 
     Tokens tokens(file);
     tokens.next();
-    Value* val;
+    Value* val = nullptr;
     for (;;) {
         auto ok = eval(tokens, &val);
         if (ok == DONE) {
             break;
         } else if (ok == ERROR) {
+            if (val) {
+                std::cout << *val << std::endl;
+            }
             fprintf(stderr, "error: failed to evaluate input!");
             break;
         }

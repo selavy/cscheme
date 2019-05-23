@@ -67,19 +67,26 @@ struct Pair
     Value* cdr;
 };
 
+struct Proc
+{
+    std::string name;
+    // TODO: implement
+};
+
 // TODO: use tagged pointer
 struct Value
 {
     enum Kind
     {
-        VOID   = 0x0,
-        NUMBER = 0x1,
-        BOOL   = 0x2,
-        STRING = 0x3,
-        CHAR   = 0x4,
-        PAIR   = 0x5,
-        PROC   = 0x6,
-        SYMBOL = 0x7,
+        VOID    = 0x0,
+        NUMBER  = 0x1,
+        BOOL    = 0x2,
+        STRING  = 0x3,
+        CHAR    = 0x4,
+        PAIR    = 0x5,
+        PROC    = 0x6,
+        BUILTIN = 0x7,
+        SYMBOL  = 0x8,
     };
     Kind kind;
 
@@ -88,6 +95,7 @@ struct Value
     double      num;
     char        ch;
     Pair        p;
+    Proc        proc;
     // TODO: how to represent pair?
     // TODO: how to represent procedure?
 };
@@ -120,6 +128,13 @@ Value* cons(Value* car, Value* cdr) noexcept {
     return mkpair(car, cdr);
 }
 
+Value* mkbuiltin(std::string name) noexcept {
+    Value* v = new Value;
+    v->kind = Value::BUILTIN;
+    v->proc.name = std::move(name);
+    return v;
+}
+
 Value* NIL = mkvoid();
 
 inline bool istruthy(const Value* v) noexcept {
@@ -128,10 +143,12 @@ inline bool istruthy(const Value* v) noexcept {
         case Value::NUMBER: return v->num != 0.0;
         case Value::BOOL:   return v->num != 0.0;
         case Value::STRING: return !v->str.empty();
-        case Value::CHAR:   return true;
-        case Value::PAIR:   return true;
-        case Value::PROC:   return true;
-        case Value::SYMBOL: return true;
+        case Value::CHAR:
+        case Value::PAIR:
+        case Value::PROC:
+        case Value::BUILTIN:
+        case Value::SYMBOL:
+            return true;
     }
     assert(false);
     return false;
@@ -141,14 +158,15 @@ inline std::ostream& operator<<(std::ostream& os, const Value& v)
 {
     switch (v.kind)
     {
-        case Value::VOID:   os << "#<void>"; break;
-        case Value::NUMBER: os << v.num; break;
-        case Value::BOOL:   os << (istruthy(&v) ? "#t" : "#f"); break;
-        case Value::STRING: os << "\"" << v.str << "\""; break;
-        case Value::CHAR:   os << "#\\" << v.ch; break;
-        case Value::PAIR:   os << "( " << *v.p.car << " . " << *v.p.cdr << " )"; break;
-        case Value::PROC:   os << "#<procedure>"; break;
-        case Value::SYMBOL: os << "'" << v.str; break;
+        case Value::VOID:    os << "#<void>"; break;
+        case Value::NUMBER:  os << v.num; break;
+        case Value::BOOL:    os << (istruthy(&v) ? "#t" : "#f"); break;
+        case Value::STRING:  os << "\"" << v.str << "\""; break;
+        case Value::CHAR:    os << "#\\" << v.ch; break;
+        case Value::PAIR:    os << "( " << *v.p.car << " . " << *v.p.cdr << " )"; break;
+        case Value::PROC:    os << "#<procedure>";
+        case Value::BUILTIN: os << "#<builtin:" << v.proc.name << ">"; break;
+        case Value::SYMBOL:  os << "'" << v.str; break;
     }
     return os;
 }
