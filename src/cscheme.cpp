@@ -100,21 +100,18 @@ bool allnumeric(Value* xs) {
 
 Value* builtin_plus(Value* args) {
     double result = 0.;
+    if (!allnumeric(args)) {
+        return mkstring("error: invalid arguments to <procedure:+>");
+    }
     Value* cur = args;
     for (;;) {
         if (isvoid(cur)) {
             break;
-        } else if (isnumber(cur)) {
-            result += cur->num;
-            break;
-        } else if (ispair(cur)) {
-            if (!isnumber(cur->p.car)) {
-                return mkstring("error: invalid argument to <procedure:+>");
-            }
+        } else {
+            assert(ispair(cur));
+            assert(isnumber(cur->p.car));
             result += cur->p.car->num;
             cur = cur->p.cdr;
-        } else {
-            return mkstring("error: invalid argument to <procedure:+>");
         }
     }
     return mknumber(result);
