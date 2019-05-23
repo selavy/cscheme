@@ -94,7 +94,7 @@ static bool lex_hex(const unsigned char *s, const unsigned char *e, uint64_t &u)
     return true;
 }
 
-static bool lex_flt(const uint8_t *s, Value& v)
+static bool lex_flt(const uint8_t *s, Value** v)
 {
     double d = 0;
     double x = 1;
@@ -139,11 +139,11 @@ sfx:
         }
     */
 end:
-    v = mknumber(d);
+    *v = mknumber(d);
     return true;
 }
 
-static bool lex_str(Input &in, uint8_t q, Value& v) noexcept
+static bool lex_str(Input &in, uint8_t q, Value** v) noexcept
 {
     std::string result;
     for (uint64_t u = q; ; result += u) {
@@ -173,11 +173,11 @@ static bool lex_str(Input &in, uint8_t q, Value& v) noexcept
             "\\x" [0-9a-fA-F]+   { if (!lex_hex(in.tok, in.cur, u)) return false; continue; }
         */
     }
-    v = mkstring(result);
+    *v = mkstring(result);
     return true;
 }
 
-Token lex(Input& in, Value& v) noexcept
+Token lex(Input& in, Value** v) noexcept
 {
     uint64_t ival;
 
@@ -220,7 +220,7 @@ Token lex(Input& in, Value& v) noexcept
             "#\\" .
             {
                 assert((in.cur - in.tok) == 3);
-                v = mkchar(in.tok[2]);
+                *v = mkchar(in.tok[2]);
                 return Token::CHAR;
             }
 
@@ -233,7 +233,7 @@ Token lex(Input& in, Value& v) noexcept
                     // TODO: put error message in value
                     return Token::ERROR;
                 }
-                v = mknumber((double)ival);
+                *v = mknumber((double)ival);
                 return Token::NUMBER;
             }
             hex
@@ -242,7 +242,7 @@ Token lex(Input& in, Value& v) noexcept
                     // TODO: put error message in value
                     return Token::ERROR;
                 }
-                v = mknumber((double)ival);
+                *v = mknumber((double)ival);
                 return Token::NUMBER;
             }
 
@@ -261,8 +261,8 @@ Token lex(Input& in, Value& v) noexcept
             }
 
             // boolean literals
-            "#f" { v = mkbool(false); return Token::BOOL; }
-            "#t" { v = mkbool(true);  return Token::BOOL; }
+            "#f" { *v = mkbool(false); return Token::BOOL; }
+            "#t" { *v = mkbool(true);  return Token::BOOL; }
 
             // operators
             "("   { return Token::LPAREN; }
@@ -289,7 +289,7 @@ Token lex(Input& in, Value& v) noexcept
             id
             {
                 std::string symbol{(const char*)in.tok, (size_t)(in.cur - in.tok)};
-                v = mkstring(std::move(symbol));
+                *v = mkstring(std::move(symbol));
                 return Token::SYMBOL;
             }
         */

@@ -9,7 +9,7 @@ add_custom_command(
 add_library(Lexer lex.cpp value.h)
 target_include_directories(Lexer PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(Lexer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
+target_link_libraries(Lexer PUBLIC Flags)
 
 add_executable(cscheme
     cscheme.cpp

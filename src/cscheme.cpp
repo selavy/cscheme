@@ -1,10 +1,10 @@
 #include <cstdio>
 #include <cassert>
 #include <list>
+#include <vector>
+#include <initializer_list>
 #include "value.h" // TODO: this is evil, must be included _before_ lex.cpp
 #include "lex.cpp"
-
-void tests();
 
 enum Status { OK, ERROR, DONE };
 
@@ -17,7 +17,7 @@ struct Tokens
         if (token == Token::FINISHED) {
             return;
         }
-        token = lex(input, value);
+        token = lex(input, &value);
         if (token == Token::ERROR) {
             throw std::runtime_error{"error parsing input"};
         }
@@ -32,7 +32,18 @@ struct Tokens
         next();
     }
 
-    bool match(Token t) {
+    bool match(std::initializer_list<Token> tokens)
+    {
+        for (auto t : tokens) {
+            if (match(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool match(Token t)
+    {
         if (token == t) {
             next();
             return true;
@@ -40,66 +51,78 @@ struct Tokens
         return false;
     }
 
-    Value& peek() {
+    Value* peek() {
         return value;
     }
 
-    Input input;
-    Token token;
-    Value value;
+    Input  input;
+    Token  token;
+    Value* value;
 };
 
-Status readsexpr(Tokens& tokens, Value& sexpr)
+// Value mklist(const std::vector<Value>& values)
+// {
+//     if (values.empty()) {
+//         return NIL;
+//     }
+//     Value* cur = new Value(mkpair(nullptr, &NIL));
+//     for (auto rit = values.rbegin(); rit != values.rend(); ++rit) {
+//         cur->p.car = 
+//     }
+// }
+
+#if 0
+Status readsexpr(Tokens& tokens, Value& result)
 {
+    std::vector<Value> stk;
     Value& value = tokens.peek();
-    while (!tokens.match(RPAREN)) {
-        if (tokens.match(FINISHED)) {
-            sexpr = mkstring("missing ')'");
+    while (!tokens.match(Token::RPAREN)) {
+        if (tokens.match({ Token::FINISHED, Token::ERROR })) {
+            result = mkstring("missing ')'");
             return Status::ERROR;
-        } else if (tokens.match())
-
-
+        }
+        Value value;
+        Status ok = eval(tokens, value);
+        if (ok != Status::OK) {
+            result = mkstring("error reading s-expression");
+            return Status::ERROR;
+        }
+        stk.push_back(value);
     }
+    result = mklist(stk);
     return Status::OK;
 }
+#endif
 
-Status eval(Tokens& tokens, Value& result)
+Status eval(Tokens& tokens, Value** result)
 {
-    Value& value = tokens.peek();
+    Value* value = tokens.peek();
     if (tokens.match(Token::FINISHED)) {
         return Status::DONE;
-    } else if (tokens.match(Token::NUMBER)) {
-        result = value;
-        return Status::OK;
-    } else if (tokens.match(Token::BOOL)) {
-        result = value;
-        return Status::OK;
-    } else if (tokens.match(Token::CHAR)) {
-        result = value;
-        return Status::OK;
-    } else if (tokens.match(Token::STRING)) {
-        result = value;
-        return Status::OK;
-    } else if (tokens.match(Token::SYMBOL)) {
-        result = value;
+    } else if (tokens.match({
+                Token::NUMBER,
+                Token::BOOL,
+                Token::CHAR,
+                Token::STRING,
+                Token::SYMBOL,
+                })) {
+        *result = new Value(*value);
         return Status::OK;
     } else if (tokens.match(Token::LPAREN)) {
-        Status ok = readsexpr(result);
-        if (ok != Status::OK) {
-            return ok;
-        }
+        // Status ok = readsexpr(tokens, result);
+        // if (ok != Status::OK) {
+        //     return ok;
+        // }
         // TODO: evaluate s-expression
         return Status::OK;
     } else {
-        result = mkstring("invalid input");
+        *result = mkstring("invalid input");
         return Status::ERROR;
     }
 }
 
 int main(int argc, char** argv)
 {
-    tests();
-
     if (argc != 2) {
         printf ("usage: %s <filename>\n", argv[0]);
         return 1;
@@ -113,16 +136,16 @@ int main(int argc, char** argv)
 
     Tokens tokens(file);
     tokens.next();
-    Value val;
+    Value* val;
     for (;;) {
-        auto ok = eval(tokens, val);
+        auto ok = eval(tokens, &val);
         if (ok == DONE) {
             break;
         } else if (ok == ERROR) {
             fprintf(stderr, "error: failed to evaluate input!");
             break;
         }
-        std::cout << "> " << val << std::endl;
+        std::cout << "> " << *val << std::endl;
     }
     printf("\n");
 
@@ -130,54 +153,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
-void tests()
-{
-    {
-        auto v = mkvoid();
-        assert(v.kind == Value::VOID);
-    }
-
-    {
-        auto n = mknumber(42);
-        assert(n.kind == Value::NUMBER);
-        assert(n.num  == 42.0);
-        assert(n.str.empty());
-        assert(istruthy(n) == true);
-        n = mknumber(0);
-        assert(istruthy(n) == false);
-    }
-
-    {
-        auto b = mkbool(true);
-        assert(istruthy(b) == true);
-        b = mkbool(false);
-        assert(istruthy(b) == false);
-    }
-
-    {
-        auto s = mkstring("Hello, World");
-        assert(s.str == "Hello, World");
-        assert(istruthy(s) == true);
-        s = mkstring("");
-        assert(s.str.empty());
-        assert(istruthy(s) == false);
-    }
-
-    {
-        auto c = mkchar('c');
-        assert(c.ch == 'c');
-        assert(istruthy(c) == true);
-    }
-
-    {
-        auto v = mknumber(42);
-        auto p = cons(&v, &NIL);
-        assert(p.kind == Value::PAIR);
-        assert(istruthy(p) == true);
-    }
-
-    printf("TESTS PASSED!\n\n");
-
-}
-

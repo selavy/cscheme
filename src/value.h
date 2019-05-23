@@ -92,42 +92,42 @@ struct Value
     // TODO: how to represent procedure?
 };
 
-Value mkvoid() noexcept {
-    return { Value::VOID };
+Value* mkvoid() noexcept {
+    return new Value{ Value::VOID };
 }
 
-Value mknumber(double v) noexcept {
-    return { Value::NUMBER, "", v };
+Value* mknumber(double v) noexcept {
+    return new Value{ Value::NUMBER, "", v };
 }
 
-Value mkbool(bool v) noexcept {
-    return { Value::BOOL, "", v ? 1.0 : 0.0 };
+Value* mkbool(bool v) noexcept {
+    return new Value{ Value::BOOL, "", v ? 1.0 : 0.0 };
 }
 
-Value mkstring(std::string s) noexcept {
-    return { Value::STRING, std::move(s) };
+Value* mkstring(std::string s) noexcept {
+    return new Value{ Value::STRING, std::move(s) };
 }
 
-Value mkchar(char ch) noexcept {
-    return { Value::CHAR, "", 0.0, ch };
+Value* mkchar(char ch) noexcept {
+    return new Value{ Value::CHAR, "", 0.0, ch };
 }
 
-Value mkpair(Value* car, Value* cdr) noexcept {
-    return { Value::PAIR, "", 0.0, 0, { car, cdr} };
+Value* mkpair(Value* car, Value* cdr) noexcept {
+    return new Value{ Value::PAIR, "", 0.0, 0, { car, cdr} };
 }
 
-Value cons(Value* car, Value* cdr) noexcept {
+Value* cons(Value* car, Value* cdr) noexcept {
     return mkpair(car, cdr);
 }
 
-Value NIL = mkvoid();
+Value* NIL = mkvoid();
 
-inline bool istruthy(Value v) noexcept {
-    switch (v.kind) {
+inline bool istruthy(const Value* v) noexcept {
+    switch (v->kind) {
         case Value::VOID:   return false;
-        case Value::NUMBER: return v.num != 0.0;
-        case Value::BOOL:   return v.num != 0.0;
-        case Value::STRING: return !v.str.empty();
+        case Value::NUMBER: return v->num != 0.0;
+        case Value::BOOL:   return v->num != 0.0;
+        case Value::STRING: return !v->str.empty();
         case Value::CHAR:   return true;
         case Value::PAIR:   return true;
         case Value::PROC:   return true;
@@ -143,7 +143,7 @@ inline std::ostream& operator<<(std::ostream& os, const Value& v)
     {
         case Value::VOID:   os << "#<void>"; break;
         case Value::NUMBER: os << v.num; break;
-        case Value::BOOL:   os << (istruthy(v) ? "#t" : "#f"); break;
+        case Value::BOOL:   os << (istruthy(&v) ? "#t" : "#f"); break;
         case Value::STRING: os << "\"" << v.str << "\""; break;
         case Value::CHAR:   os << "#\\" << v.ch; break;
         case Value::PAIR:   os << "( " << *v.p.car << " . " << *v.p.cdr << " )"; break;
