@@ -65,14 +65,14 @@ Value* mklist(const std::vector<Value*>& values)
     if (values.empty()) {
         return NIL;
     }
-
-    // TODO: implement
-    return mkpair(values[0], NIL);
-
-    // Value* cur = new Value(mkpair(nullptr, NIL));
-    // for (auto rit = values.rbegin(); rit != values.rend(); ++rit) {
-    //     cur->p.car = 
-    // }
+    auto it = values.begin();
+    Value* result = mkpair(*it++, NIL);
+    Value* cur = result;
+    for (; it != values.end(); ++it) {
+        cur->p.cdr = mkpair(*it, NIL);
+        cur = cur->p.cdr;
+    }
+    return result;
 }
 
 Status eval(Tokens& tokens, Value** result);
@@ -85,14 +85,11 @@ Status readsexpr(Tokens& tokens, Value** result)
             *result = mkstring("missing ')'");
             return Status::ERROR;
         }
-        Value* value;
-        Status ok = eval(tokens, &value);
+        Status ok = eval(tokens, result);
         if (ok != Status::OK) {
-            // *result = mkstring("failed to read s-expression");
-            *result = value;
             return Status::ERROR;
         }
-        stk.push_back(value);
+        stk.push_back(*result);
     }
     *result = mklist(stk);
     return Status::OK;
