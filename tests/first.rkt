@@ -1,8 +1,22 @@
 ;; TODO: uncomment this line
 ;; #lang ranket
 
-;; first.rkt
+;; simple
 (+ 1 2)
 
 ;; nested
-;; ((+ 1 2) (+ 3 4))
+(+ (+ 1 2) (+ 3 4))
+
+;; no arguments
+(+)
+
+;; no arguments
+(-)
+
+;; 1 argument
+(- 5)
+
+;; N arguments
+(- 10 5 4 3)
+
+(+ (+ 5 5) (- 44) (+ 5 (+ 2 3)))

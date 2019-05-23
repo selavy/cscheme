@@ -85,7 +85,8 @@ Value* mklist(const std::vector<Value*>& values)
 
 Status eval(Tokens& tokens, Value** result);
 
-bool allnumeric(Value* xs) {
+bool allnumeric(Value* xs)
+{
     for (;;) {
         if (isvoid(xs)) {
             break;
@@ -98,21 +99,41 @@ bool allnumeric(Value* xs) {
     return true;
 }
 
+size_t countargs(Value* xs) {
+    size_t result = 0;
+    for (Value* c = xs; ispair(c); c = c->p.cdr) {
+        ++result;
+    }
+    return result;
+}
+
 Value* builtin_plus(Value* args) {
-    double result = 0.;
     if (!allnumeric(args)) {
         return mkstring("error: invalid arguments to <procedure:+>");
     }
-    Value* cur = args;
-    for (;;) {
-        if (isvoid(cur)) {
-            break;
-        } else {
-            assert(ispair(cur));
-            assert(isnumber(cur->p.car));
-            result += cur->p.car->num;
-            cur = cur->p.cdr;
-        }
+    double result = 0.;
+    for (Value* c = args; ispair(c); c = c->p.cdr) {
+        assert(isnumber(c->p.car));
+        result += c->p.car->num;
+    }
+    return mknumber(result);
+}
+
+Value* builtin_minus(Value* args) {
+    if (!allnumeric(args)) {
+        return mkstring("error: invalid arguments to <procedure:->");
+    }
+    if (isvoid(args)) {
+        return mknumber(0.);
+    }
+    if (countargs(args) == 1) {
+        return mknumber(-1 * args->p.car->num);
+    }
+    assert(isnumber(args->p.car));
+    double result = args->p.car->num;
+    for (Value* c = args->p.cdr; ispair(c); c = c->p.cdr) {
+        assert(isnumber(c->p.car));
+        result -= c->p.car->num;
     }
     return mknumber(result);
 }
@@ -140,14 +161,19 @@ Status readsexpr(Tokens& tokens, Value** result)
 
     Value* fn = sexpr->p.car;
     sexpr = sexpr->p.cdr;
-    if (!ispair(sexpr)) {
+    if (!ispair(sexpr) && !isvoid(sexpr)) {
         *result = mkstring("invalid arguments list");
         return Status::ERROR;
     }
 
     if (isbuiltin(fn)) {
         switch (fn->proc.builtin) {
-            case F_PLUS: *result = builtin_plus(sexpr); return Status::OK;
+            case F_PLUS:
+                *result = builtin_plus(sexpr);
+                return Status::OK;
+            case F_MINUS:
+                *result = builtin_minus(sexpr);
+                return Status::OK;
         }
         *result = mkstring("invalid builtin"); return Status::ERROR;
     } else {
@@ -176,6 +202,9 @@ Status eval(Tokens& tokens, Value** result)
         return Status::OK;
     } else if (tokens.match(Token::PLUS)) {
         *result = mkbuiltin("+", F_PLUS);
+        return Status::OK;
+    } else if (tokens.match(Token::MINUS)) {
+        *result = mkbuiltin("-", F_MINUS);
         return Status::OK;
     } else if (tokens.match(Token::LPAREN)) {
         return readsexpr(tokens, result);
