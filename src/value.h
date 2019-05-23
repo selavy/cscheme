@@ -70,6 +70,7 @@ struct Pair
 struct Proc
 {
     std::string name;
+    int builtin;
     // TODO: implement
 };
 
@@ -100,6 +101,17 @@ struct Value
     // TODO: how to represent procedure?
 };
 
+bool isvoid(const Value* v)    { return v->kind == Value::VOID; }
+bool isnumber(const Value* v)  { return v->kind == Value::NUMBER; }
+bool isbool(const Value* v)    { return v->kind == Value::BOOL; }
+bool isstring(const Value* v)  { return v->kind == Value::STRING; }
+bool ischar(const Value* v)    { return v->kind == Value::CHAR; }
+bool ispair(const Value* v)    { return v->kind == Value::PAIR; }
+bool isproc(const Value* v)    { return v->kind == Value::PROC; }
+bool isbuiltin(const Value* v) { return v->kind == Value::BUILTIN; }
+bool issymbol(const Value* v)  { return v->kind == Value::SYMBOL; }
+
+
 Value* mkvoid() noexcept {
     return new Value{ Value::VOID };
 }
@@ -128,10 +140,11 @@ Value* cons(Value* car, Value* cdr) noexcept {
     return mkpair(car, cdr);
 }
 
-Value* mkbuiltin(std::string name) noexcept {
+Value* mkbuiltin(std::string name, int builtin) noexcept {
     Value* v = new Value;
     v->kind = Value::BUILTIN;
     v->proc.name = std::move(name);
+    v->proc.builtin = builtin;
     return v;
 }
 

@@ -2,11 +2,19 @@
 #include <cassert>
 #include <list>
 #include <vector>
+#include <sstream>
 #include <initializer_list>
 #include "value.h" // TODO: this is evil, must be included _before_ lex.cpp
 #include "lex.cpp"
 
 enum Status { OK, ERROR, DONE };
+
+enum
+{
+    F_PLUS,
+    F_MINUS,
+    NUM_BUILTINS,
+};
 
 struct Tokens
 {
@@ -77,6 +85,41 @@ Value* mklist(const std::vector<Value*>& values)
 
 Status eval(Tokens& tokens, Value** result);
 
+bool allnumeric(Value* xs) {
+    for (;;) {
+        if (isvoid(xs)) {
+            break;
+        }
+        if (!ispair(xs) || !isnumber(xs->p.car)) {
+            return false;
+        }
+        xs = xs->p.cdr;
+    }
+    return true;
+}
+
+Value* builtin_plus(Value* args) {
+    double result = 0.;
+    Value* cur = args;
+    for (;;) {
+        if (isvoid(cur)) {
+            break;
+        } else if (isnumber(cur)) {
+            result += cur->num;
+            break;
+        } else if (ispair(cur)) {
+            if (!isnumber(cur->p.car)) {
+                return mkstring("error: invalid argument to <procedure:+>");
+            }
+            result += cur->p.car->num;
+            cur = cur->p.cdr;
+        } else {
+            return mkstring("error: invalid argument to <procedure:+>");
+        }
+    }
+    return mknumber(result);
+}
+
 Status readsexpr(Tokens& tokens, Value** result)
 {
     std::vector<Value*> stk;
@@ -91,7 +134,32 @@ Status readsexpr(Tokens& tokens, Value** result)
         }
         stk.push_back(*result);
     }
-    *result = mklist(stk);
+
+    Value* sexpr = mklist(stk);
+    if (!ispair(sexpr)) {
+        *result = mkstring("s-expression didn't yield a pair!");
+        return Status::ERROR;
+    }
+
+    Value* fn = sexpr->p.car;
+    sexpr = sexpr->p.cdr;
+    if (!ispair(sexpr)) {
+        *result = mkstring("invalid arguments list");
+        return Status::ERROR;
+    }
+
+    if (isbuiltin(fn)) {
+        switch (fn->proc.builtin) {
+            case F_PLUS: *result = builtin_plus(sexpr); return Status::OK;
+        }
+        *result = mkstring("invalid builtin"); return Status::ERROR;
+    } else {
+        std::stringstream ss;
+        ss << "unable to evaluate car of s-expression: " << *fn;
+        *result = mkstring(ss.str());
+        return Status::ERROR;
+    }
+
     return Status::OK;
 }
 
@@ -110,15 +178,10 @@ Status eval(Tokens& tokens, Value** result)
         *result = new Value(*value);
         return Status::OK;
     } else if (tokens.match(Token::PLUS)) {
-        *result = mkbuiltin("+");
+        *result = mkbuiltin("+", F_PLUS);
         return Status::OK;
     } else if (tokens.match(Token::LPAREN)) {
-        Status ok = readsexpr(tokens, result);
-        if (ok != Status::OK) {
-            return ok;
-        }
-        // TODO: evaluate s-expression
-        return Status::OK;
+        return readsexpr(tokens, result);
     } else {
         *result = mkstring("invalid input");
         return Status::ERROR;
