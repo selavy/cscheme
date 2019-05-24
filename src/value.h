@@ -11,8 +11,9 @@
 using s64 = int64_t;
 using u64 = uint64_t;
 using Value = u64;
+using String = std::string;
 
-enum
+enum Tag
 {
     TAG_NUM = 0x0,
     TAG_NIL = 0x1,
@@ -32,7 +33,7 @@ const char* tagtostr(size_t tag);
 // Tokens
 //
 
-enum
+enum Token
 {
     // function keywords
     F_DEFINE, F_IF, F_PLUS, F_MINUS,
@@ -47,7 +48,7 @@ const char* funtostr(size_t f);
 // String Interning
 //
 
-const std::string* strintern(std::string s);
+const String* strintern(String s);
 void dump_strtab();
 
 //
@@ -58,8 +59,8 @@ s64 totag(Value v);
 u64 isneg(Value v);
 s64 tonum(Value v);
 u64 tofun(Value v);
-const std::string& tostr(Value v);
-const std::string& tosym(Value v);
+const String& tostr(Value v);
+const String& tosym(Value v);
 
 //
 // Make Value
