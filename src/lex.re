@@ -217,6 +217,7 @@ Token lex(Input& in, Value& v) noexcept
             // keywords
             "if"     { v = mkfun(F_IF); return F_IF; }
             "define" { v = mkfun(F_DEFINE); return F_DEFINE; }
+            "lambda" { v = mkfun(F_LAMBDA); return F_LAMBDA; }
             "nil"    { v = mknil(); return T_NIL; }
 
             // symbols

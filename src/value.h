@@ -37,7 +37,7 @@ enum Token
 {
     // function keywords
     F_DEFINE, F_IF, F_PLUS, F_MINUS, F_MULTIPLY, F_DIVIDE,
-    F_GT, F_LT, F_GTE, F_LTE, F_QUOTE,
+    F_GT, F_LT, F_GTE, F_LTE, F_QUOTE, F_LAMBDA,
 
     // tokens
     T_DOT, T_LPAREN, T_RPAREN, T_SYM, T_NUM, T_STR, T_NIL,
