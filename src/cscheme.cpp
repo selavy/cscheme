@@ -125,11 +125,13 @@ int main(int argc, char** argv)
     printf("Value of c: '%s'\n", tostr(c).c_str());
 
     Value d = mknum(42);
+    Value e = mkfun(F_PLUS);
 
     printf("valprint(a): %s\n", valprint(a).c_str());
     printf("valprint(b): %s\n", valprint(b).c_str());
     printf("valprint(c): %s\n", valprint(c).c_str());
     printf("valprint(d): %s\n", valprint(d).c_str());
+    printf("valprint(e): %s\n", valprint(e).c_str());
 
     return 0;
 }
