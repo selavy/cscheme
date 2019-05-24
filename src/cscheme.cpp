@@ -55,8 +55,7 @@ int sp = 0;
 Value stack[4096];
 void push(Value v)
 {
-    // TEMP TEMP
-    printf("PUSH(%s)\n", vprint(v));
+    // printf("PUSH(%s)\n", vprint(v)); // TEMP TEMP
     stack[sp++] = v;
 }
 Value pop() { assert(sp > 0); --sp; return stack[sp]; }
