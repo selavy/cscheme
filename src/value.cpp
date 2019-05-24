@@ -51,7 +51,7 @@ static const char* TokenStrings[] = {
 // Tokens
 //
 
-const char* funtostr(size_t f) {
+const char* funtostr(u64 f) {
     if (f > F_QUOTE) {
         assert(0);
         return "INVALID FUNCTION";
@@ -147,25 +147,43 @@ Value mksym(std::string s)
 Value mkstr(std::string s) { return (tou64(strintern(std::move(s))) << TAG_BITS) | TAG_STR; }
 
 //
+// Type Checks
+//
+
+bool isnum(Value v) { return totag(v) == TAG_NUM; }
+bool isnil(Value v) { return totag(v) == TAG_NIL; }
+bool isfun(Value v) { return totag(v) == TAG_FUN; }
+bool issym(Value v) { return totag(v) == TAG_SYM; }
+bool isstr(Value v) { return totag(v) == TAG_STR; }
+
+//
 // Utilities
 //
 
 std::string valprint(Value v)
 {
-    std::string result;
+    std::string val;
     switch (totag(v)) {
-        case TAG_NUM: return std::to_string(tonum(v));
-        case TAG_NIL: return "nil";
-        case TAG_FUN: // return funtostr(tofun(v));
-            return "<function>";
-        case TAG_SYM: return tosym(v);
+        case TAG_NUM: val = std::to_string(tonum(v)); break;
+        case TAG_NIL: val = "nil"; break;
+        case TAG_FUN: val = funtostr(tofun(v)); break;
+        case TAG_SYM: val = tosym(v); break;
         case TAG_STR:
-            result = "\"";
-            result += tostr(v);
-            result += "\"";
-            return result;
+            val = "\"";
+            val += tostr(v);
+            val += "\"";
+            break;
+        default: return "invalid value";
     }
-    return "Invalid Value";
+    std::string tag = tagtostr(totag(v));
+    return tag + ": " + val;
+}
+
+const char* vprint(Value v)
+{
+    static std::string s;
+    s = valprint(v);
+    return s.c_str();
 }
 
 bool istrue(Value v)

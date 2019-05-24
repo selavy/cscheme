@@ -203,12 +203,12 @@ Token lex(Input& in, Value& v) noexcept
             // operators
             "("   { return T_LPAREN; }
             ")"   { return T_RPAREN; }
-            "+"   { v = mkfun(F_PLUS); return F_PLUS; }
-            "-"   { v = mkfun(F_MINUS); return F_MINUS; }
+            "+"   { v = mkfun(F_PLUS);     return F_PLUS; }
+            "-"   { v = mkfun(F_MINUS);    return F_MINUS; }
             "*"   { v = mkfun(F_MULTIPLY); return F_MULTIPLY; }
-            "/"   { v = mkfun(F_DIVIDE); return F_DIVIDE; }
-            ">"   { v = mkfun(F_GT); return F_GT; }
-            "<"   { v = mkfun(F_LT); return F_LT; }
+            "/"   { v = mkfun(F_DIVIDE);   return F_DIVIDE; }
+            ">"   { v = mkfun(F_GT);  return F_GT; }
+            "<"   { v = mkfun(F_LT);  return F_LT; }
             ">="  { v = mkfun(F_GTE); return F_GTE; }
             "<="  { v = mkfun(F_LTE); return F_LTE; }
             "\."  { return T_DOT; }

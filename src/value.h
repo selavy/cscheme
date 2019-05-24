@@ -46,8 +46,8 @@ enum Token
     T_EOF, T_ERROR,
 };
 
-const char* funtostr(size_t f);
-const char* toktostr(size_t t);
+const char* funtostr(u64 f);
+const char* toktostr(u64 t);
 
 //
 // String Interning
@@ -79,8 +79,18 @@ Value mksym(std::string s);
 Value mkstr(std::string s);
 
 //
+// Type Checks
+//
+bool isnum(Value v);
+bool isnil(Value v);
+bool isfun(Value v);
+bool issym(Value v);
+bool isstr(Value v);
+
+//
 // Utilities
 //
 
 std::string valprint(Value v);
+const char* vprint(Value v);
 bool istrue(Value v);
