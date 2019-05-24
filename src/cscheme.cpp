@@ -123,8 +123,17 @@ int b_minus(int nargs)
 
 int b_multiply(int nargs)
 {
-    push(mkstr("unimplemented error"));
-    return ERROR;
+    if (!allnumeric(nargs)) {
+        popn(nargs + 1);
+        push(mkstr("invalid argument to #<function:*>: non-numeric argument"));
+        return ERROR;
+    }
+    s64 result = 1;
+    for (int i = 0; i < nargs; ++i) {
+        result *= tonum(aget(i));
+    }
+    push(mknum(result));
+    return OK;
 }
 
 int b_divide(int nargs)
