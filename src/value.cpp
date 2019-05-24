@@ -175,8 +175,9 @@ std::string valprint(Value v)
             break;
         default: return "invalid value";
     }
-    std::string tag = tagtostr(totag(v));
-    return tag + ": " + val;
+    // std::string tag = tagtostr(totag(v));
+    // return tag + ": " + val;
+    return val;
 }
 
 const char* vprint(Value v)

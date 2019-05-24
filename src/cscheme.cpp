@@ -51,13 +51,16 @@ void expect(int tok)
     }
 }
 
+int ap = 0;
+Value argstk[128];
+void pusharg(Value v) { argstk[ap++] = v; }
+Value poparg() { assert(ap > 0); --ap; return argstk[ap]; }
+Value aget(int n) { assert(ap > n); return argstk[ap-n-1]; }
+void clearargs() { ap = 0; }
+
 int sp = 0;
 Value stack[4096];
-void push(Value v)
-{
-    // printf("PUSH(%s)\n", vprint(v)); // TEMP TEMP
-    stack[sp++] = v;
-}
+void push(Value v) { stack[sp++] = v; }
 Value pop() { assert(sp > 0); --sp; return stack[sp]; }
 void popn(int n) { assert(sp >= n); sp -= n; }
 Value peek() { assert(sp > 0); return stack[sp-1]; }
@@ -77,8 +80,8 @@ int sexpr();
 
 bool allnumeric(int nargs)
 {
-    while (nargs-- > 0) {
-        if (!isnum(sget(nargs))) {
+    for (int i = 0; i < nargs; ++i) {
+        if (!isnum(aget(i))) {
             return false;
         }
     }
@@ -106,9 +109,8 @@ int b_plus(int nargs)
     }
     s64 result = 0;
     for (int i = 0; i < nargs; ++i) {
-        result += tonum(pop());
+        result += tonum(aget(i));
     }
-    pop();
     push(mknum(result));
     return OK;
 }
@@ -189,8 +191,11 @@ int evalfn(int nargs)
 {
     assert(nargs > 0);
 
-    Value f = sget(nargs - 1);
-    nargs--;
+    for (int i = 0; i < nargs - 1; ++i) {
+        pusharg(pop());
+    }
+    Value f = pop();
+    --nargs;
 
     if (isfun(f)) {
         switch(tofun(f)) {
