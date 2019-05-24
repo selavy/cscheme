@@ -15,11 +15,11 @@ using String = std::string;
 
 enum Tag
 {
-    TAG_NUM = 0x0,
-    TAG_NIL = 0x1,
-    TAG_FUN = 0x2,
-    TAG_SYM = 0x3,
-    TAG_STR = 0x4,
+    TAG_NUM  = 0x0,
+    TAG_NIL  = 0x1,
+    TAG_FUN  = 0x2,
+    TAG_SYM  = 0x3,
+    TAG_STR  = 0x4,
 
     TAG_MSK = 0x7,
     TAG_BITS = 3,
@@ -36,13 +36,18 @@ const char* tagtostr(size_t tag);
 enum Token
 {
     // function keywords
-    F_DEFINE, F_IF, F_PLUS, F_MINUS,
+    F_DEFINE, F_IF, F_PLUS, F_MINUS, F_MULTIPLY, F_DIVIDE,
+    F_GT, F_LT, F_GTE, F_LTE, F_QUOTE,
 
     // tokens
-    T_DOT, T_LPAREN, T_RPAREN, T_SYM, T_NUM, T_QUOTE, Q_DQUOTE,
+    T_DOT, T_LPAREN, T_RPAREN, T_SYM, T_NUM, T_STR, T_NIL,
+
+    // finish markers
+    T_EOF, T_ERROR,
 };
 
 const char* funtostr(size_t f);
+const char* toktostr(size_t t);
 
 //
 // String Interning
@@ -69,11 +74,13 @@ const String& tosym(Value v);
 Value mknum(u64 v);
 Value mknil();
 Value mkfun(int f);
-Value mksym(const char* s);
-Value mkstr(const char* s);
+Value mksym(const char* begin, const char* end);
+Value mksym(std::string s);
+Value mkstr(std::string s);
 
 //
 // Utilities
 //
 
 std::string valprint(Value v);
+bool istrue(Value v);

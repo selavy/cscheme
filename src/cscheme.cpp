@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include "lex.h"
 #include "value.h"
 
 int main(int argc, char** argv)
@@ -33,6 +34,35 @@ int main(int argc, char** argv)
     printf("valprint(f): %s\n", valprint(f).c_str());
     printf("valprint(g): %s\n", valprint(g).c_str());
     printf("valprint(h): %s\n", valprint(h).c_str());
+
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s <FILE>\n", argv[0]);
+        exit(1);
+    }
+
+    FILE* fp = fopen(argv[1], "r");
+    if (!fp) {
+        perror("fopen");
+        exit(1);
+    }
+
+    Input in(fp);
+
+    Token t;
+    Value v;
+    for (;;) {
+        t = lex(in, v);
+        if (t == T_ERROR) {
+            fprintf(stderr, "error: %s", tostr(v).c_str());
+            break;
+        } else if (t == T_EOF) {
+            break;
+        }
+        printf("Token: %s, Value: %s\n", toktostr(t), valprint(v).c_str());
+    }
+
+    fclose(fp);
+    printf("Bye.\n");
 
     return 0;
 }
