@@ -58,26 +58,34 @@ struct Input {
 /*!re2c re2c:define:YYCTYPE = "uint8_t"; */
 
 template<int base>
-static bool adddgt(uint64_t &u, uint64_t d)
+static bool adddgt(int64_t &u, int64_t d)
 {
-    if (u > (ULONG_MAX - d) / base) {
+    if (u > (LONG_MAX - d) / base) {
         return false;
     }
     u = u * base + d;
     return true;
 }
 
-static bool lex_dec(const unsigned char *s, const unsigned char *e, uint64_t &u)
+static bool lex_dec(const unsigned char *s, const unsigned char *e, int64_t &u)
 {
+    bool neg = false;
+    if (*s == '-') {
+        neg = true;
+        ++s;
+    }
     for (u = 0; s < e; ++s) {
         if (!adddgt<10>(u, *s - 0x30u)) {
             return false;
         }
     }
+    if (neg) {
+        u *= -1;
+    }
     return true;
 }
 
-static bool lex_hex(const unsigned char *s, const unsigned char *e, uint64_t &u)
+static bool lex_hex(const unsigned char *s, const unsigned char *e, int64_t &u)
 {
     for (u = 0, s += 2; s < e;) {
     /*!re2c
@@ -94,7 +102,7 @@ static bool lex_hex(const unsigned char *s, const unsigned char *e, uint64_t &u)
 static bool lex_str(Input &in, uint8_t q, Value& v) noexcept
 {
     std::string result;
-    for (uint64_t u = q; ; result += u) {
+    for (int64_t u = q; ; result += u) {
         in.tok = in.cur;
         /*!re2c
             re2c:define:YYCURSOR = in.cur;
@@ -127,7 +135,7 @@ static bool lex_str(Input &in, uint8_t q, Value& v) noexcept
 
 Token lex(Input& in, Value& v) noexcept
 {
-    uint64_t ival;
+    int64_t ival;
     for (;;) {
         in.tok = in.cur;
         /*!re2c
@@ -167,7 +175,7 @@ Token lex(Input& in, Value& v) noexcept
             }
 
             // integer literals
-            dec = [1-9][0-9]*;
+            dec = [-]? [1-9][0-9]*;
             hex = '0x' [0-9a-fA-F]+;
             dec
             {
@@ -195,14 +203,14 @@ Token lex(Input& in, Value& v) noexcept
             // operators
             "("   { return T_LPAREN; }
             ")"   { return T_RPAREN; }
-            "+"   { return F_PLUS; }
-            "-"   { return F_MINUS; }
-            "*"   { return F_MULTIPLY; }
-            "/"   { return F_DIVIDE; }
-            ">"   { return F_GT; }
-            "<"   { return F_LT; }
-            ">="  { return F_GTE; }
-            "<="  { return F_LTE; }
+            "+"   { v = mkfun(F_PLUS); return F_PLUS; }
+            "-"   { v = mkfun(F_MINUS); return F_MINUS; }
+            "*"   { v = mkfun(F_MULTIPLY); return F_MULTIPLY; }
+            "/"   { v = mkfun(F_DIVIDE); return F_DIVIDE; }
+            ">"   { v = mkfun(F_GT); return F_GT; }
+            "<"   { v = mkfun(F_LT); return F_LT; }
+            ">="  { v = mkfun(F_GTE); return F_GTE; }
+            "<="  { v = mkfun(F_LTE); return F_LTE; }
             "\."  { return T_DOT; }
             "'"   { return F_QUOTE; }
 
