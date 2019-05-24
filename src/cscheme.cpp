@@ -2,8 +2,11 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <stdexcept>
+#include <map>
 #include "lex.h"
 #include "value.h"
+
+using Env = std::map<Value, Value>;
 
 Token t = F_DEFINE;
 Value v = mknil();
@@ -76,7 +79,7 @@ void dumpstk()
 
 enum { OK, DONE, ERROR };
 
-int sexpr();
+int sexpr(Env& env);
 
 bool allnumeric(int nargs)
 {
@@ -88,19 +91,19 @@ bool allnumeric(int nargs)
     return true;
 }
 
-int b_define(int nargs)
+int b_define(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_if(int nargs)
+int b_if(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_plus(int nargs)
+int b_plus(Env& env, int nargs)
 {
     if (!allnumeric(nargs)) {
         popn(nargs + 1);
@@ -115,13 +118,13 @@ int b_plus(int nargs)
     return OK;
 }
 
-int b_minus(int nargs)
+int b_minus(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_multiply(int nargs)
+int b_multiply(Env& env, int nargs)
 {
     if (!allnumeric(nargs)) {
         popn(nargs + 1);
@@ -136,43 +139,43 @@ int b_multiply(int nargs)
     return OK;
 }
 
-int b_divide(int nargs)
+int b_divide(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_gt(int nargs)
+int b_gt(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_lt(int nargs)
+int b_lt(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_gte(int nargs)
+int b_gte(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_lte(int nargs)
+int b_lte(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int b_quote(int nargs)
+int b_quote(Env& env, int nargs)
 {
     push(mkstr("unimplemented error"));
     return ERROR;
 }
 
-int eval()
+int eval(Env& env)
 {
     if (match(T_EOF)) {
         return DONE;
@@ -188,7 +191,7 @@ int eval()
         push(p);
         return OK;
     } else if (match(T_LPAREN)) {
-        return sexpr();
+        return sexpr(env);
     } else {
         printf("error: invalid token: %s\n", toktostr(t)); // TEMP TEMP
         push(mkstr("error: invalid token"));
@@ -196,7 +199,7 @@ int eval()
     }
 }
 
-int evalfn(int nargs)
+int evalfn(Env& env, int nargs)
 {
     assert(nargs > 0);
 
@@ -208,18 +211,18 @@ int evalfn(int nargs)
 
     if (isfun(f)) {
         switch(tofun(f)) {
-            case F_DEFINE:   return b_define(nargs);
+            case F_DEFINE:   return b_define(env, nargs);
             // TODO: this needs to be special cased
-            case F_IF:       return b_if(nargs);
-            case F_PLUS:     return b_plus(nargs);
-            case F_MINUS:    return b_minus(nargs);
-            case F_MULTIPLY: return b_multiply(nargs);
-            case F_DIVIDE:   return b_divide(nargs);
-            case F_GT:       return b_gt(nargs);
-            case F_LT:       return b_lt(nargs);
-            case F_GTE:      return b_gte(nargs);
-            case F_LTE:      return b_lte(nargs);
-            case F_QUOTE:    return b_quote(nargs);
+            case F_IF:       return b_if(env, nargs);
+            case F_PLUS:     return b_plus(env, nargs);
+            case F_MINUS:    return b_minus(env, nargs);
+            case F_MULTIPLY: return b_multiply(env, nargs);
+            case F_DIVIDE:   return b_divide(env, nargs);
+            case F_GT:       return b_gt(env, nargs);
+            case F_LT:       return b_lt(env, nargs);
+            case F_GTE:      return b_gte(env, nargs);
+            case F_LTE:      return b_lte(env, nargs);
+            case F_QUOTE:    return b_quote(env, nargs);
         }
         push(mkstr("invalid function"));
         return ERROR;
@@ -232,7 +235,7 @@ int evalfn(int nargs)
     }
 }
 
-int sexpr()
+int sexpr(Env& env)
 {
     int nargs = 0;
     while (!match(T_RPAREN)) {
@@ -240,7 +243,7 @@ int sexpr()
             push(mkstr("missing closing ')' for s-expression"));
             return ERROR;
         }
-        if (eval() != OK) {
+        if (eval(env) != OK) {
             return ERROR;
         }
         ++nargs;
@@ -251,7 +254,7 @@ int sexpr()
         return ERROR;
     }
 
-    return evalfn(nargs);
+    return evalfn(env, nargs);
 }
 
 int main(int argc, char** argv)
@@ -267,11 +270,12 @@ int main(int argc, char** argv)
         exit(1);
     }
 
+    Env env;
     Input input(fp);
     in = &input;
     next();
     for (;;) {
-        auto ok = eval();
+        auto ok = eval(env);
         // dumpstk();
         if (ok == DONE) {
             break;
