@@ -15,6 +15,8 @@ enum
 
     TAG_MSK = 0x7,
     TAG_BITS = 3,
+    SIGN_BIT = (1ull << 63),
+    SIGN_MSK = (SIGN_BIT >> 0) | (SIGN_BIT >> 1) | (SIGN_BIT >> 2),
 };
 
 const char* const TagStr[] = {
@@ -58,7 +60,6 @@ using s64 = int64_t;
 using u64 = uint64_t;
 using Value = u64;
 
-// TODO: intern strings
 std::unordered_set<std::string> strtab;
 const std::string* strintern(std::string s)
 {
@@ -66,7 +67,6 @@ const std::string* strintern(std::string s)
     auto iterator = result.first;
     return &*iterator;
 }
-u64 tou64(const void* v) { return reinterpret_cast<u64>(v); }
 
 void dump_strtab()
 {
@@ -77,18 +77,18 @@ void dump_strtab()
     printf("END STRING TABLE.\n");
 }
 
-// TODO: make sure sign bit is saved
-Value mknum(s64 v) { return (v << TAG_BITS) | TAG_NUM; }
+u64 tou64(const void* v) { return reinterpret_cast<u64>(v); }
+s64 totag(Value v) { return v & TAG_MSK; }
+u64 isneg(Value v) { return (v & SIGN_BIT) != 0 ? ~u64(0) : u64(0); }
+s64 tonum(Value v) { assert(totag(v) == TAG_NUM); return (SIGN_MSK & isneg(v)) | (v >> TAG_BITS); }
+u64 tofun(Value v) { assert(totag(v) == TAG_FUN); return v >> TAG_BITS; }
+const std::string& tostr(Value v) { assert(totag(v) == TAG_STR); return *(std::string*)(v >> TAG_BITS); }
+const std::string& tosym(Value v) { assert(totag(v) == TAG_SYM); return *(std::string*)(v >> TAG_BITS); }
+Value mknum(u64 v) { return (v << TAG_BITS) | TAG_NUM; }
 Value mknil() { return TAG_NIL; }
 Value mkfun(int f) { return (f << TAG_BITS) | TAG_FUN; }
 Value mksym(const char* s) { return (tou64(strintern(s)) << TAG_BITS) | TAG_SYM; }
 Value mkstr(const char* s) { return (tou64(strintern(s)) << TAG_BITS) | TAG_STR; }
-
-s64 totag(Value v) { return v & TAG_MSK; }
-s64 tonum(Value v) { assert(totag(v) == TAG_NUM); return v >> TAG_BITS; }
-u64 tofun(Value v) { assert(totag(v) == TAG_FUN); return v >> TAG_BITS; }
-const std::string& tostr(Value v) { assert(totag(v) == TAG_STR); return *(std::string*)(v >> TAG_BITS); }
-const std::string& tosym(Value v) { assert(totag(v) == TAG_SYM); return *(std::string*)(v >> TAG_BITS); }
 
 std::string valprint(Value v)
 {
@@ -126,12 +126,18 @@ int main(int argc, char** argv)
 
     Value d = mknum(42);
     Value e = mkfun(F_PLUS);
+    Value f = mknum(-55);
+    Value g = mknum(-100000000111ll);
+    Value h = mknum( 100000000111ll);
 
     printf("valprint(a): %s\n", valprint(a).c_str());
     printf("valprint(b): %s\n", valprint(b).c_str());
     printf("valprint(c): %s\n", valprint(c).c_str());
     printf("valprint(d): %s\n", valprint(d).c_str());
     printf("valprint(e): %s\n", valprint(e).c_str());
+    printf("valprint(f): %s\n", valprint(f).c_str());
+    printf("valprint(g): %s\n", valprint(g).c_str());
+    printf("valprint(h): %s\n", valprint(h).c_str());
 
     return 0;
 }
