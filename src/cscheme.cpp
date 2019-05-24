@@ -6,7 +6,10 @@
 #include "lex.h"
 #include "value.h"
 
-using Env = std::map<Value, Value>;
+struct Env {
+    std::map<Value, Value> e;
+    Env* parent = nullptr;
+};
 
 Token t = F_DEFINE;
 Value v = mknil();
@@ -59,11 +62,13 @@ Value argstk[128];
 void pusharg(Value v) { argstk[ap++] = v; }
 Value poparg() { assert(ap > 0); --ap; return argstk[ap]; }
 Value aget(int n) { assert(ap > n); return argstk[ap-n-1]; }
+void aset(int n, Value v) { assert(ap > n); argstk[ap-n-1] = v; }
 void clearargs() { ap = 0; }
 
 int sp = 0;
 Value stack[4096];
-void push(Value v) { stack[sp++] = v; }
+void push(Value v) { /* printf("PUSH(%s)\n", vprint(v)); */ /*TEMP TEMP*/ stack[sp++] = v; }
+void pusherr(const char* s) { push(mkstr(s)); }
 Value pop() { assert(sp > 0); --sp; return stack[sp]; }
 void popn(int n) { assert(sp >= n); sp -= n; }
 Value peek() { assert(sp > 0); return stack[sp-1]; }
@@ -93,8 +98,18 @@ bool allnumeric(int nargs)
 
 int b_define(Env& env, int nargs)
 {
-    push(mkstr("unimplemented error"));
-    return ERROR;
+    if (nargs != 2) {
+        push(mkstr("incorrect number of arguments, expected 2"));
+        return ERROR;
+    }
+    Value sym = poparg();
+    if (!issym(sym)) {
+        push(mkstr("can only bind values to symbols"));
+        return  ERROR;
+    }
+    env.e[sym] = poparg();
+    push(mknil());
+    return OK;
 }
 
 int b_if(Env& env, int nargs)
@@ -106,7 +121,6 @@ int b_if(Env& env, int nargs)
 int b_plus(Env& env, int nargs)
 {
     if (!allnumeric(nargs)) {
-        popn(nargs + 1);
         push(mkstr("invalid argument to #<function:+>: non-numeric argument"));
         return ERROR;
     }
@@ -120,14 +134,28 @@ int b_plus(Env& env, int nargs)
 
 int b_minus(Env& env, int nargs)
 {
-    push(mkstr("unimplemented error"));
-    return ERROR;
+    if (!allnumeric(nargs)) {
+        push(mkstr("invalid argument to #<function:+>: non-numeric argument"));
+        return ERROR;
+    }
+    s64 result;
+    if (nargs == 0) {
+        result = 0;
+    } else if (nargs == 1) {
+        result = -1 * tonum(aget(0));
+    } else {
+        result = tonum(aget(0));
+        for (int i = 1; i < nargs; ++i) {
+            result -= tonum(aget(i));
+        }
+    }
+    push(mknum(result));
+    return OK;
 }
 
 int b_multiply(Env& env, int nargs)
 {
     if (!allnumeric(nargs)) {
-        popn(nargs + 1);
         push(mkstr("invalid argument to #<function:*>: non-numeric argument"));
         return ERROR;
     }
@@ -188,6 +216,7 @@ int eval(Env& env)
     } else if (matchv(11, F_DEFINE, F_IF, F_PLUS, F_MINUS,
                 F_MULTIPLY, F_DIVIDE, F_GT, F_LT, F_GTE,
                 F_LTE, F_QUOTE)) {
+        printf("Function token: %s\n", vprint(p));
         push(p);
         return OK;
     } else if (match(T_LPAREN)) {
@@ -199,15 +228,51 @@ int eval(Env& env)
     }
 }
 
+bool isspecial(Value f)
+{
+    if (!isfun(f)) {
+        return false;
+    }
+    int fn = tofun(f);
+    return fn == F_IF || fn == F_DEFINE;
+}
+
+bool lookup(const Env& env_, Value& v) {
+    const Env* env = &env_;
+    while (env) {
+        auto found = env->e.find(v);
+        if (found != env->e.end()) {
+            v = found->second;
+            return true;
+        }
+        env = env->parent;
+    }
+    return false;
+}
+
 int evalfn(Env& env, int nargs)
 {
     assert(nargs > 0);
 
-    for (int i = 0; i < nargs - 1; ++i) {
+    --nargs;
+    for (int i = 0; i < nargs; ++i) {
         pusharg(pop());
     }
     Value f = pop();
-    --nargs;
+
+    // XXX: this is awkward for `if`, `define`, `cond`, etc
+    if (!isspecial(f)) {
+        for (int i = 0; i < nargs; ++i) {
+            Value val = aget(i);
+            if (issym(val)) {
+                if (!lookup(env, val)) {
+                    pusherr("unable to find symbol");
+                    return ERROR;
+                }
+                aset(i, val);
+            }
+        }
+    }
 
     if (isfun(f)) {
         switch(tofun(f)) {
@@ -230,7 +295,7 @@ int evalfn(Env& env, int nargs)
         push(mkstr("unimplemented: symbols not supported yet"));
         return ERROR;
     } else {
-        push(mkstr("invalid s-expression"));
+        push(mkstr("evalfn: invalid s-expression"));
         return ERROR;
     }
 }
@@ -250,7 +315,7 @@ int sexpr(Env& env)
     }
 
     if (nargs == 0) {
-        push(mkstr("invalid s-expression, no arguments"));
+        push(mkstr("sexpr: invalid s-expression, no arguments"));
         return ERROR;
     }
 
@@ -271,6 +336,18 @@ int main(int argc, char** argv)
     }
 
     Env env;
+    env.e = {
+        { mksym("define"), mkfun(F_DEFINE)   },
+        { mksym("+"),      mkfun(F_PLUS)     },
+        { mksym("-"),      mkfun(F_MINUS)    },
+        { mksym("*"),      mkfun(F_MULTIPLY) },
+        { mksym("/"),      mkfun(F_DIVIDE)   },
+        { mksym(">"),      mkfun(F_GT)       },
+        { mksym("<"),      mkfun(F_LT)       },
+        { mksym(">="),     mkfun(F_GTE)      },
+        { mksym("<="),     mkfun(F_LTE)      },
+        { mksym("quote"),  mkfun(F_QUOTE)    },
+    };
     Input input(fp);
     in = &input;
     next();

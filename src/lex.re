@@ -215,9 +215,9 @@ Token lex(Input& in, Value& v) noexcept
             "'"   { return F_QUOTE; }
 
             // keywords
-            "if"     { return F_IF; }
-            "define" { return F_DEFINE; }
-            "nil"    { return T_NIL; }
+            "if"     { v = mkfun(F_IF); return F_IF; }
+            "define" { v = mkfun(F_DEFINE); return F_DEFINE; }
+            "nil"    { v = mknil(); return T_NIL; }
 
             // symbols
             id = [a-zA-Z_][a-zA-Z_0-9]*;
