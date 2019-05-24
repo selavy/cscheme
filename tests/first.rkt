@@ -28,3 +28,5 @@
 (+ x y)
 (define x 5)
 (+ x y)
+(define x +)
+(x 5 5)

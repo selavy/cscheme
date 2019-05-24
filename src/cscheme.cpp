@@ -238,6 +238,9 @@ bool isspecial(Value f)
 }
 
 bool lookup(const Env& env_, Value& v) {
+    if (!issym(v)) {
+        return false;
+    }
     const Env* env = &env_;
     while (env) {
         auto found = env->e.find(v);
@@ -274,6 +277,13 @@ int evalfn(Env& env, int nargs)
         }
     }
 
+    if (issym(f)) {
+        if (!lookup(env, f)) {
+            pusherr("unable to find symbol");
+            return ERROR;
+        }
+    }
+
     if (isfun(f)) {
         switch(tofun(f)) {
             case F_DEFINE:   return b_define(env, nargs);
@@ -290,9 +300,6 @@ int evalfn(Env& env, int nargs)
             case F_QUOTE:    return b_quote(env, nargs);
         }
         push(mkstr("invalid function"));
-        return ERROR;
-    } else if (issym(f)) {
-        push(mkstr("unimplemented: symbols not supported yet"));
         return ERROR;
     } else {
         push(mkstr("evalfn: invalid s-expression"));
