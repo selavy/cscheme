@@ -108,6 +108,7 @@ int b_plus(int nargs)
     for (int i = 0; i < nargs; ++i) {
         result += tonum(pop());
     }
+    pop();
     push(mknum(result));
     return OK;
 }
@@ -257,7 +258,7 @@ int main(int argc, char** argv)
     next();
     for (;;) {
         auto ok = eval();
-        dumpstk();
+        // dumpstk();
         if (ok == DONE) {
             break;
         } else if (ok == ERROR) {
