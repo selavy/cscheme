@@ -13,4 +13,6 @@ target_compile_options(Flags INTERFACE
     -std=c++17
     )
 
+add_subdirectory(third_party)
+add_subdirectory(tests)
 add_subdirectory(src)

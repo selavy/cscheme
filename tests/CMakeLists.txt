@@ -1,0 +1,5 @@
+add_executable(unittest unittest.cpp)
+target_link_libraries(unittest PUBLIC Flags)
+target_link_libraries(unittest PUBLIC CLua)
+target_link_libraries(unittest PUBLIC Catch2)
+target_include_directories(unittest PUBLIC "${CMAKE_SOURCE_DIR}/src")

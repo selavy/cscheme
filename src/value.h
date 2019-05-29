@@ -1,96 +1,173 @@
 #pragma once
 
 #include <cstdint>
+#include <cfloat>
+#include <climits>
+#include <cmath>
 #include <cassert>
-#include <string>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
 
-//
-// Basic Type Tags
-//
+enum Kind {
+    LV_INT    = 0x1u,
+    LV_NIL    = 0x2u,
+    LV_TRUE   = 0x3u,
+    LV_FALSE  = 0x4u,
+    LV_STR    = 0x5u,
+    LV_TAB    = 0x6u,
+    LV_FUN    = 0x7u,
+    LV_THREAD = 0x8u,
+    LV_LUDATA = 0x9u,
+    LV_UDATA  = 0xau,
 
-using s64 = int64_t;
-using u64 = uint64_t;
-using Value = u64;
-using String = std::string;
+    LV_NTYPES = LV_UDATA,
+    LV_NBITS = 4,
+};
+static_assert(LV_NTYPES < (1u << LV_NBITS), "Types won't fit in tag bits");
 
-enum Tag
+static_assert(sizeof(double)    == 8, "only 64-bit doubles supported");
+static_assert(sizeof(uintptr_t) == 8, "only 64-bit pointers supported");
+
+constexpr uint64_t LV_DBLVAL = 0xfff8000000000000ull;
+constexpr uint64_t INDEXMASK = 0x00007fffffffffffull;
+
+//----------------------------------------------------------
+// Value representation:
+//        |--------+------------+-------------------+
+//        | <sign> | <exponent> |     <fraction>    |
+//        |--------+------------+-------------------+
+//        | 1-bit  |   11-bits  |      52-bits      |
+// -------|--------+------------+-------------------+
+// size:  |    1   |     11     | 1 |  4  |   47    |
+// -------|--------+------------+-------------------+
+// value: |    1   |    1..1    | 1 | tag | data    |
+// -------|--------+------------+-------------------+
+//----------------------------------------------------------
+
+struct Value
 {
-    TAG_NUM  = 0x0,
-    TAG_NIL  = 0x1,
-    TAG_FUN  = 0x2,
-    TAG_SYM  = 0x3,
-    TAG_STR  = 0x4,
-
-    TAG_MSK = 0x7,
-    TAG_BITS = 3,
-    SIGN_BIT = (1ull << 63),
-    SIGN_MSK = (SIGN_BIT >> 0) | (SIGN_BIT >> 1) | (SIGN_BIT >> 2),
+    union {
+        uint64_t uval;
+        double   dval;
+        // XXX: only works on little endian platform
+        struct {
+            uint32_t lo;
+            uint32_t hi;
+        } b;
+    };
 };
 
-const char* tagtostr(size_t tag);
-
-//
-// Tokens
-//
-
-enum Token
+// TODO: add string interning
+// TODO: integrate with GC
+struct String
 {
-    // function keywords
-    F_DEFINE, F_IF, F_PLUS, F_MINUS, F_MULTIPLY, F_DIVIDE,
-    F_GT, F_LT, F_GTE, F_LTE, F_QUOTE, F_LAMBDA,
-
-    // tokens
-    T_DOT, T_LPAREN, T_RPAREN, T_SYM, T_NUM, T_STR, T_NIL,
-
-    // finish markers
-    T_EOF, T_ERROR,
+    static constexpr size_t MaxSmallSize = 28;
+    uint32_t len;
+    union {
+        char* ptr;
+        char  str[MaxSmallSize];
+    };
 };
+std::vector<String*> strtab;
+std::vector<size_t>  strtabidx;
 
-const char* funtostr(u64 f);
-const char* toktostr(u64 t);
+const char* str2cstr(const String& s) {
+    if (s.len < String::MaxSmallSize) {
+        return &s.str[0];
+    } else {
+        return s.ptr;
+    }
+}
 
-//
-// String Interning
-//
+uint32_t mktag(uint32_t tag)
+{
+    assert((tag < (1u << LV_NBITS)) && "invalid tag");
+    return 0xfff80000u | (tag << 15);
+}
 
-const String* strintern(String s);
-void dump_strtab();
+Value mkdouble(double x)
+{
+    assert((x == x) || *reinterpret_cast<uint64_t*>(&x) == 0xfff8000000000000ull);
+    Value v;
+    v.dval = x;
+    return v;
+}
 
-//
-// Value -> Basic Type
-//
+Value mkint(int x)
+{
+    Value v;
+    v.b.hi = mktag(LV_INT);
+    v.b.lo = static_cast<uint32_t>(x);
+    return v;
+}
 
-s64 totag(Value v);
-u64 isneg(Value v);
-s64 tonum(Value v);
-u64 tofun(Value v);
-const String& tostr(Value v);
-const String& tosym(Value v);
+Value mknil()
+{
+    Value v;
+    v.b.hi = mktag(LV_NIL);
+    v.b.lo = 0u;
+    return v;
+}
 
-//
-// Make Value
-//
+Value mktrue()
+{
+    Value v;
+    v.b.hi = mktag(LV_TRUE);
+    v.b.lo = 0u;
+    return v;
+}
 
-Value mknum(u64 v);
-Value mknil();
-Value mkfun(int f);
-Value mksym(const char* begin, const char* end);
-Value mksym(std::string s);
-Value mkstr(std::string s);
 
-//
-// Type Checks
-//
-bool isnum(Value v);
-bool isnil(Value v);
-bool isfun(Value v);
-bool issym(Value v);
-bool isstr(Value v);
+Value mkfalse()
+{
+    Value v;
+    v.b.hi = mktag(LV_FALSE);
+    v.b.lo = 0u;
+    return v;
+}
 
-//
-// Utilities
-//
+Value mkstr(const char* str, size_t len)
+{
+    // TODO: GC needs to know about this allocation
+    String* s = (String*) malloc(sizeof(*s));
+    s->len = len;
+    if (len < String::MaxSmallSize) {
+        memcpy(&s->str[0], str, len);
+        s->str[len] = '\0';
+    } else {
+        s->ptr = (char*) malloc(len + 1);
+        memcpy(s->ptr, str, len);
+        s->ptr[len] = '\0';
+    }
 
-std::string valprint(Value v);
-const char* vprint(Value v);
-bool istrue(Value v);
+    size_t index;
+    if (strtabidx.empty()) {
+        index = strtab.size();
+        strtab.push_back(s);
+    } else {
+        index = strtabidx.back();
+        strtabidx.pop_back();
+        assert(index < strtab.size() && strtab[index] == nullptr);
+        strtab[index] = s;
+    }
+
+    Value v;
+    v.b.hi = mktag(LV_STR);
+    v.uval |= index;
+    return v;
+}
+
+Value mkstr(const char* str) { return mkstr(str, strlen(str)); }
+
+uint32_t totag(Value v) { return (v.b.hi >> 15) & 0x00fu; }
+bool isint(Value v) { return totag(v) == LV_INT; }
+bool isdouble(Value v) { return v.uval <= LV_DBLVAL; }
+bool isnil(Value v) { return totag(v) == LV_NIL; }
+bool istrue(Value v) { return totag(v) == LV_TRUE; }
+bool isfalse(Value v) { return totag(v) == LV_FALSE; }
+bool isstr(Value v) { return totag(v) == LV_STR; }
+
+int unsafe_toint(Value v) { assert(isint(v)); return v.b.lo; }
+double unsafe_todouble(Value v) { assert(isdouble(v)); return v.dval; }
+String* unsafe_tostr(Value v) { assert(isstr(v)); return strtab[v.uval & INDEXMASK]; }
